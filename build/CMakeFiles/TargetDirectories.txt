@@ -1,0 +1,3 @@
+C:/Users/Admin/Desktop/custom compiler/build/CMakeFiles/main.dir
+C:/Users/Admin/Desktop/custom compiler/build/CMakeFiles/edit_cache.dir
+C:/Users/Admin/Desktop/custom compiler/build/CMakeFiles/rebuild_cache.dir
