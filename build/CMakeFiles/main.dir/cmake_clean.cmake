@@ -1,13 +1,11 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/main.dir/lexer.c.obj"
-  "CMakeFiles/main.dir/lexer.c.obj.d"
-  "CMakeFiles/main.dir/main.c.obj"
-  "CMakeFiles/main.dir/main.c.obj.d"
-  "CMakeFiles/main.dir/parser.c.obj"
-  "CMakeFiles/main.dir/parser.c.obj.d"
-  "libmain.dll.a"
-  "main.exe"
-  "main.exe.manifest"
+  "CMakeFiles/main.dir/lexer.c.o"
+  "CMakeFiles/main.dir/lexer.c.o.d"
+  "CMakeFiles/main.dir/main.c.o"
+  "CMakeFiles/main.dir/main.c.o.d"
+  "CMakeFiles/main.dir/parser.c.o"
+  "CMakeFiles/main.dir/parser.c.o.d"
+  "main"
   "main.pdb"
 )
 

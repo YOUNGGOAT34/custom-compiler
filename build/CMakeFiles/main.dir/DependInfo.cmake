@@ -8,9 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Users/Admin/Desktop/custom compiler/lexer.c" "CMakeFiles/main.dir/lexer.c.obj" "gcc" "CMakeFiles/main.dir/lexer.c.obj.d"
-  "C:/Users/Admin/Desktop/custom compiler/main.c" "CMakeFiles/main.dir/main.c.obj" "gcc" "CMakeFiles/main.dir/main.c.obj.d"
-  "C:/Users/Admin/Desktop/custom compiler/parser.c" "CMakeFiles/main.dir/parser.c.obj" "gcc" "CMakeFiles/main.dir/parser.c.obj.d"
+  "/home/goat/Desktop/custom compiler/lexer.c" "CMakeFiles/main.dir/lexer.c.o" "gcc" "CMakeFiles/main.dir/lexer.c.o.d"
+  "/home/goat/Desktop/custom compiler/main.c" "CMakeFiles/main.dir/main.c.o" "gcc" "CMakeFiles/main.dir/main.c.o.d"
+  "/home/goat/Desktop/custom compiler/parser.c" "CMakeFiles/main.dir/parser.c.o" "gcc" "CMakeFiles/main.dir/parser.c.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
