@@ -1,1 +1,1 @@
-/usr/bin/cc CMakeFiles/main.dir/main.c.o CMakeFiles/main.dir/lexer.c.o CMakeFiles/main.dir/parser.c.o -o main
+/usr/bin/cc CMakeFiles/main.dir/main.c.o CMakeFiles/main.dir/lexer.c.o CMakeFiles/main.dir/parser.c.o CMakeFiles/main.dir/code_generator.c.o -o main

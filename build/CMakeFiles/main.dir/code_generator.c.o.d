@@ -1,6 +1,6 @@
-CMakeFiles/main.dir/parser.c.o: \
- /home/goat/Desktop/custom\ compiler/parser.c /usr/include/stdc-predef.h \
- /usr/include/stdio.h \
+CMakeFiles/main.dir/code_generator.c.o: \
+ /home/goat/Desktop/custom\ compiler/code_generator.c \
+ /usr/include/stdc-predef.h /usr/include/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -48,9 +48,10 @@ CMakeFiles/main.dir/parser.c.o: \
  /usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h \
  /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/assert.h \
- /usr/include/string.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+ /home/goat/Desktop/custom\ compiler/code_generator.h \
+ /home/goat/Desktop/custom\ compiler/parser.h \
+ /home/goat/Desktop/custom\ compiler/lexer.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
- /usr/include/strings.h /home/goat/Desktop/custom\ compiler/parser.h \
- /home/goat/Desktop/custom\ compiler/lexer.h
+ /usr/include/strings.h

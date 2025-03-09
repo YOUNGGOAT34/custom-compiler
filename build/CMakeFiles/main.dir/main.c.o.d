@@ -52,4 +52,5 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
  /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/ctype.h \
  /home/goat/Desktop/custom\ compiler/lexer.h \
- /home/goat/Desktop/custom\ compiler/parser.h
+ /home/goat/Desktop/custom\ compiler/parser.h \
+ /home/goat/Desktop/custom\ compiler/code_generator.h
