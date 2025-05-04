@@ -1,1 +1,1 @@
-/usr/bin/cc CMakeFiles/main.dir/main.c.o CMakeFiles/main.dir/lexer.c.o CMakeFiles/main.dir/parser.c.o CMakeFiles/main.dir/code_generator.c.o -o main
+/usr/bin/clang-18 -g CMakeFiles/main.dir/main.c.o -o main

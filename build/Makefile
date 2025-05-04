@@ -129,54 +129,6 @@ main/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
-code_generator.o: code_generator.c.o
-.PHONY : code_generator.o
-
-# target to build an object file
-code_generator.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/code_generator.c.o
-.PHONY : code_generator.c.o
-
-code_generator.i: code_generator.c.i
-.PHONY : code_generator.i
-
-# target to preprocess a source file
-code_generator.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/code_generator.c.i
-.PHONY : code_generator.c.i
-
-code_generator.s: code_generator.c.s
-.PHONY : code_generator.s
-
-# target to generate assembly for a file
-code_generator.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/code_generator.c.s
-.PHONY : code_generator.c.s
-
-lexer.o: lexer.c.o
-.PHONY : lexer.o
-
-# target to build an object file
-lexer.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/lexer.c.o
-.PHONY : lexer.c.o
-
-lexer.i: lexer.c.i
-.PHONY : lexer.i
-
-# target to preprocess a source file
-lexer.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/lexer.c.i
-.PHONY : lexer.c.i
-
-lexer.s: lexer.c.s
-.PHONY : lexer.s
-
-# target to generate assembly for a file
-lexer.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/lexer.c.s
-.PHONY : lexer.c.s
-
 main.o: main.c.o
 .PHONY : main.o
 
@@ -201,30 +153,6 @@ main.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.c.s
 .PHONY : main.c.s
 
-parser.o: parser.c.o
-.PHONY : parser.o
-
-# target to build an object file
-parser.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/parser.c.o
-.PHONY : parser.c.o
-
-parser.i: parser.c.i
-.PHONY : parser.i
-
-# target to preprocess a source file
-parser.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/parser.c.i
-.PHONY : parser.c.i
-
-parser.s: parser.c.s
-.PHONY : parser.s
-
-# target to generate assembly for a file
-parser.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/parser.c.s
-.PHONY : parser.c.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -234,18 +162,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... main"
-	@echo "... code_generator.o"
-	@echo "... code_generator.i"
-	@echo "... code_generator.s"
-	@echo "... lexer.o"
-	@echo "... lexer.i"
-	@echo "... lexer.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... parser.o"
-	@echo "... parser.i"
-	@echo "... parser.s"
 .PHONY : help
 
 
