@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+
 typedef enum {
   BEGINNING,
   INT,
@@ -11,7 +12,7 @@ typedef enum {
   OPERATOR,
   IDENTIFIER,
   STRING,
- 
+  UNKNOWN,
   END_OF_TOKENS,
 } TokenType;
 
@@ -106,6 +107,7 @@ Token  *generate_number(char *current,int *current_index){
 
 Token *generate_separator_operator(char *current,int *current_index,TokenType type){
      Token *token=malloc(sizeof(Token));
+     token->type=UNKNOWN;
      token->value=malloc(sizeof(char)*2);
      if((current[*current_index] == '=' && current[*current_index + 1] == '=') || 
         (current[*current_index] == '!' && current[*current_index + 1] == '=') || 
@@ -130,6 +132,23 @@ Token *generate_separator_operator(char *current,int *current_index,TokenType ty
 
      return token;
 
+}
+
+
+
+const char *token_type_to_string(TokenType type) {
+  switch (type) {
+    case BEGINNING: return "BEGINNING";
+    case INT: return "INT";
+    case KEYWORD: return "KEYWORD";
+    case SEPARATOR: return "SEPARATOR";
+    case OPERATOR: return "OPERATOR";
+    case IDENTIFIER: return "IDENTIFIER";
+    case STRING: return "STRING";
+    
+    case END_OF_TOKENS: return "END_OF_TOKENS";
+    default: return "UNKNOWN";
+  }
 }
 
 
@@ -162,16 +181,14 @@ Token *lexer(FILE *file){
     //go through the characters stored in current
     
     while (current[current_index]!='\0'){
-            
             tokens_size++;
-             if(tokens_size > number_of_tokens){
+             if(tokens_size >= number_of_tokens){
              number_of_tokens *= 1.5;
-           tokens = realloc(tokens, sizeof(Token) * number_of_tokens);
+              tokens = realloc(tokens, sizeof(Token) * number_of_tokens);
             }
 
-
             char curr=current[current_index];
-
+            
             if(current[current_index]=='\n'){
                 line_num++;
                 current_index++;
@@ -185,7 +202,7 @@ Token *lexer(FILE *file){
             
             Token *token = NULL;
           
-           if (strchr("=+-></!;(){}", curr)) {
+           if (strchr("=+*-></!;(){}", curr)) {
             TokenType type = strchr(";(){}", curr) ? SEPARATOR : OPERATOR;
             token = generate_separator_operator(current, &current_index, type);
              }else if(isdigit(curr)){
@@ -209,18 +226,14 @@ Token *lexer(FILE *file){
             free(token); // Free the token struct itself
             tokens_index++;
         }
-
-
-            
-          
-          
-
     }
-
-     tokens[tokens_index].value = NULL;
-      tokens[tokens_index].type = END_OF_TOKENS;
-      tokens_index++;
-
+    
+    
+    tokens[tokens_index].value=strdup("EOF");
+    tokens[tokens_index].type=END_OF_TOKENS;
+    tokens[tokens_index].line_num=line_num-1;
+    tokens_index++;
+    
     // Clean up
     
     free(current);
@@ -232,33 +245,24 @@ Token *lexer(FILE *file){
 }
 
 
-const char *token_type_to_string(TokenType type) {
-  switch (type) {
-    case BEGINNING: return "BEGINNING";
-    case INT: return "INT";
-    case KEYWORD: return "KEYWORD";
-    case SEPARATOR: return "SEPARATOR";
-    case OPERATOR: return "OPERATOR";
-    case IDENTIFIER: return "IDENTIFIER";
-    case STRING: return "STRING";
-    
-    case END_OF_TOKENS: return "END_OF_TOKENS";
-    default: return "UNKNOWN";
-  }
-}
+
 
 
 
 
 void print_tokens(Token *tokens){
     int index=0;
+
+
    
-    while(tokens[index].type!=END_OF_TOKENS){
+    do{
         
-         printf("TOKEN TYPE: %s , TOKEN VALUE: %s , on line: %d\n",token_type_to_string(tokens[index].type),tokens[index].value,tokens[index].line_num);
-         
+         printf("TOKEN TYPE: %s , TOKEN VALUE: %s , on line: %zu\n",token_type_to_string(tokens[index].type),tokens[index].value,tokens[index].line_num);
          index++;
-    }
+    }while(tokens[index].value);
+
+  
+ 
     
 }
 

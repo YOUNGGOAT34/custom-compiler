@@ -2,8 +2,12 @@
 #include<string.h>
 #include<stdlib.h>
 #include<ctype.h>
-#include "lexer.h"
-#include "parser.h"
+#include "./lexer/lexer.h"
+#include "parser/parser.h"
+#include "code generator/code_generator.h"
+
+
+
 
 int main(){
     FILE *file=fopen("../test.g","r");
@@ -11,34 +15,25 @@ int main(){
         perror("Failed to open file");
         return 1;
     }
-
-    Token *tokens=lexer(file);
     
-    Node *root=createNode("aaa");
-    Node *left=createNode("bbb");
-    Node *right=createNode("ccc");
-
-    root->left=left;
-    root->right=right;
-    preorderTraversal(root);
-    free(root);
-    free(left);
-    free(right);
-
-    
-
-
+  Token *tokens=lexer(file);
+  //  print_tokens(tokens);
+   Node *root= parser(tokens);
    
+   code_generator(root);
 
-    return 0;
+   system("nasm -f elf64 ../generated.asm -o generated.o");
+   system("ld generated.o -o generated");
+  
+   
+  return WEXITSTATUS(system("./generated"));
+
+
+
+ 
 
 }
 
 
-// echo "# custom-compiler" >> README.md
-// git init
-// git add README.md
-// git commit -m "first commit"
-// git branch -M main
-// git remote add origin https://github.com/YOUNGGOAT34/custom-compiler.git
-// git push -u origin main
+
+

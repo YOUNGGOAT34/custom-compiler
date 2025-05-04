@@ -10,4 +10,4 @@ project("custom_compiler"
 
 
 # Add an executable
-add_executable(main main.c lexer.c parser.c)
+add_executable(main main.c )
