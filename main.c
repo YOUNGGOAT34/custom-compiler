@@ -27,11 +27,6 @@ int main(){
   
    
   return WEXITSTATUS(system("./generated"));
-
-
-
- 
-
 }
 
 

@@ -244,25 +244,14 @@ Token *lexer(FILE *file){
      
 }
 
-
-
-
-
-
-
 void print_tokens(Token *tokens){
     int index=0;
-
-
-   
     do{
         
          printf("TOKEN TYPE: %s , TOKEN VALUE: %s , on line: %zu\n",token_type_to_string(tokens[index].type),tokens[index].value,tokens[index].line_num);
          index++;
     }while(tokens[index].value);
 
-  
- 
     
 }
 

@@ -8,8 +8,8 @@
 
   
 Node *createNode(char *val);
-int get_precedence(char *operation);
 Node *parser(Token *tokens);
+void handle_exit_system(Node *current,Token **current_token);
 Node *parse_expression(Token **current_token_ptr);
 Node *parse_primary(Token **current_token_ptr);
 Node *parse_multiplication(Token **current_token_ptr);
