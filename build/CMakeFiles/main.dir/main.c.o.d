@@ -66,6 +66,10 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
   /home/goat/Desktop/custom\ compiler/parser/../lexer/lexer.h \
   /home/goat/Desktop/custom\ compiler/parser/parser.c \
   /usr/include/assert.h \
+  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/hashmap.h \
+  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/hashmap.c \
+  /usr/lib/llvm-18/lib/clang/18/include/stdbool.h \
   /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.h \
   /home/goat/Desktop/custom\ compiler/code\ generator/../parser/parser.h \
-  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.c
+  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.c \
+  /home/goat/Desktop/custom\ compiler/symbol\ table/hashmap.h

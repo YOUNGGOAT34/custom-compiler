@@ -5,6 +5,7 @@
 #include "./lexer/lexer.h"
 #include "parser/parser.h"
 #include "code generator/code_generator.h"
+#include "symbol table/hashmap.h"
 
 
 
@@ -24,9 +25,19 @@ int main(){
 
    system("nasm -f elf64 ../generated.asm -o generated.o");
    system("ld generated.o -o generated");
+   printf("\n");
   
-   
+  print_table();
+
+  
   return WEXITSTATUS(system("./generated"));
+
+  
+
+ 
+
+  
+
 }
 
 

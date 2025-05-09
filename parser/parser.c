@@ -2,11 +2,14 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-
+#include "../symbol table/hashmap.h"
 
 
 
 #define GLOABALSPACE 5
+
+ //for the symbol table
+
 
 typedef struct Node{
   char *value;
@@ -14,6 +17,7 @@ typedef struct Node{
    struct Node *left;
   struct Node *right;
 } Node;
+
 
 
 Node *initialize_node(Node *node,char *val,TokenType type){
@@ -64,11 +68,17 @@ void missing_token_error(char *token,Token prev_token){
 //parse primary expression.
 Node *parse_primary(Token **current_token_ptr){
     Token *token=*current_token_ptr;
-
+     if(token->type==IDENTIFIER){
+        if(!search_variable(token->value)){
+          printf("%s is not defined in the current scope\n",token->value);
+          exit(1);
+        };
+     }
     if (token->type != INT && token->type!=IDENTIFIER) {
-      printf("%u\n",token->type);
+      
       missing_token_error("integer literal", *token);
     }
+
     Node *node=initialize_node(NULL,token->value,token->type);
      token++;
     *current_token_ptr=token;
@@ -122,11 +132,19 @@ Node *parse_expression(Token **current_token_ptr) {
 }
 
 
+//function to check if a variableis defined before using it
+bool check_variable(char *name){
+   Variable *var=search_variable(name);
+   if(var==NULL) return false;
+
+   return true;
+}
+
 //handle exit system call
 void handle_exit_system(Node *current,Token **current_token){
       Token *token=*current_token;
-      Node *exit_node=malloc(sizeof(Node));
-      exit_node=initialize_node(exit_node,token->value,token->type);
+     
+      Node *exit_node=initialize_node(NULL,token->value,token->type);
       current->right=exit_node;
       current=exit_node;
       token++;
@@ -138,7 +156,6 @@ void handle_exit_system(Node *current,Token **current_token){
       }
 
       if (token->type==SEPARATOR && strcmp(token->value,"(")==0){
-          
           Node *open_parens_node=initialize_node(NULL,token->value,token->type);
           exit_node->left=open_parens_node;
           current=open_parens_node;
@@ -183,13 +200,24 @@ void handle_exit_system(Node *current,Token **current_token){
     *current_token=token;
 }
 
+//variable redefination
+void variable_redefination(Variable *var){
+   printf("%s is already defined on line %zu\n",var->name,var->line_number);
+   exit(1);
+   
+}
+
 
 //create variables
 
 Node *create_variables(Node *current,Token **current_token_ptr){
     Token *token=*current_token_ptr;
-    
+    //allocate memory for the variable
+    Variable *variable=malloc(sizeof(Variable));
     Node *var_node=initialize_node(NULL,token->value,token->type);
+    //variable type i.e int,char ,float etc....
+    variable->type=token->value;
+    
     current->left=var_node;
     token++;
     // The next expected is an identifie;
@@ -213,6 +241,15 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        }
 
        Node *identifier_node=initialize_node(NULL,token->value,token->type);
+       //check if the variable has been already defined
+       Variable *var=search_variable(token->value);
+       if(var!=NULL) variable_redefination(var);
+       //name of the variable(identifier)
+       variable->name=token->value;
+       variable->line_number=token->line_num;
+       //insert the variable into the symbol table.
+       insert(variable);
+       
        operator_node->left=identifier_node;
        token++;
        token++;
