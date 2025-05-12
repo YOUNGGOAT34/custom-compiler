@@ -1,8 +1,14 @@
-int a=3+1;
 
-int b=4;
-int ckk=6;
+int c=6;
+
+if(c>10)
 {
-    
+c=8+c;
 }
-exit(b+ckk);
+int a=8;
+
+
+exit(a);
+
+
+

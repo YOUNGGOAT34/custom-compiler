@@ -19,12 +19,13 @@ void generate_data_section(Node *root,FILE *file){
 
 void traverse(Node *root, FILE *file) {
   if (!root) return;
-
+   
   // Recursively process left and right subtrees first (Post-Order): left->right->root
   traverse(root->left, file);
   traverse(root->right, file);
 
-   if(root->type==INT){
+  
+   if(root->type==INT ){
      fprintf(file,"\tmov rax,%s\n",root->value);
      fprintf(file,"\tpush rax\n");
      }else if(root->type==OPERATOR){
@@ -50,9 +51,11 @@ void traverse(Node *root, FILE *file) {
      
     fprintf(file,"\tpush rax\n");
 
-   }else if(root->type==IDENTIFIER){
+   }else if(root->type==IDENTIFIER && strcmp(root->value,"UPDATE")){
       fprintf(file,"\tmov rax,[%s]\n",root->value);
       fprintf(file,"\tpush rax\n");
+   }else if(strcmp(root->value,"UPDATE")==0){
+      root=root->left;
    }
 
   // Handle exit syscall if root contains "exit"

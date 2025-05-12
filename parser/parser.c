@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include<stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "../symbol table/hashmap.h"
+#include "../symbol table/hashmap.c"
+#include "../scope/stack.c"
 
 
 
@@ -19,6 +21,7 @@ typedef struct Node{
 } Node;
 
 
+//Initialize node
 
 Node *initialize_node(Node *node,char *val,TokenType type){
     node=malloc(sizeof(Node));
@@ -33,7 +36,7 @@ Node *initialize_node(Node *node,char *val,TokenType type){
 
 
 
-
+//visualize the AST
 
 void print_tree(Node *root,int space){
     if(root==NULL) return;
@@ -60,17 +63,24 @@ void end_of_tokens_error(size_t line){
 }
 
 void missing_token_error(char *token,Token prev_token){
-    printf("Expected \"%s\" after \"%s\" on line %zu \n",token,prev_token.value,prev_token.line_num);
+    // printf("Expected \"%s\" after \"%s\" on line %zu \n",token,prev_token.value,prev_token.line_num);
+    fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): Expected '%s' after '%s'  \n",prev_token.line_num, prev_token.value,token);
     exit(1);
 }
+
+
 
 
 //parse primary expression.
 Node *parse_primary(Token **current_token_ptr){
     Token *token=*current_token_ptr;
      if(token->type==IDENTIFIER){
-        if(!search_variable(token->value)){
-          printf("%s is not defined in the current scope\n",token->value);
+        //get the current scope, then get the variable
+        
+        Variable *variable=search_variable(token->value);
+       
+        if(variable==NULL){
+          fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): '%s' is not \n", token->line_num,variable->name);
           exit(1);
         };
      }
@@ -78,7 +88,7 @@ Node *parse_primary(Token **current_token_ptr){
       
       missing_token_error("integer literal", *token);
     }
-
+    
     Node *node=initialize_node(NULL,token->value,token->type);
      token++;
     *current_token_ptr=token;
@@ -134,7 +144,7 @@ Node *parse_expression(Token **current_token_ptr) {
 
 //function to check if a variableis defined before using it
 bool check_variable(char *name){
-   Variable *var=search_variable(name);
+   Variable *var=search_variable(name);;
    if(var==NULL) return false;
 
    return true;
@@ -202,7 +212,8 @@ void handle_exit_system(Node *current,Token **current_token){
 
 //variable redefination
 void variable_redefination(Variable *var){
-   printf("%s is already defined on line %zu\n",var->name,var->line_number);
+  fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is already defined (line %zu)\n", var->name, var->line_number);
+
    exit(1);
    
 }
@@ -211,6 +222,7 @@ void variable_redefination(Variable *var){
 //create variables
 
 Node *create_variables(Node *current,Token **current_token_ptr){
+    
     Token *token=*current_token_ptr;
     //allocate memory for the variable
     Variable *variable=malloc(sizeof(Variable));
@@ -242,13 +254,15 @@ Node *create_variables(Node *current,Token **current_token_ptr){
 
        Node *identifier_node=initialize_node(NULL,token->value,token->type);
        //check if the variable has been already defined
-       Variable *var=search_variable(token->value);
-       if(var!=NULL) variable_redefination(var);
+        Variable *existing = search_variable(token->value);
+        if (existing != NULL) {
+            variable_redefination(existing); // handle the redeclaration error
+        }
        //name of the variable(identifier)
-       variable->name=token->value;
-       variable->line_number=token->line_num;
+       variable->name = strdup(token->value);
+       variable->type = strdup(token->value);
        //insert the variable into the symbol table.
-       insert(variable);
+       hashmap_insert(current_scope()->map, variable->name, variable);
        
        operator_node->left=identifier_node;
        token++;
@@ -269,12 +283,6 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     }else{
        missing_token_error("identifier",*(token-1));
     }
-    //The next token expected is assignment operator
-
-    
-
-   
-
    
 
   //next token expected should be a semi colon
@@ -297,10 +305,57 @@ Node *create_variables(Node *current,Token **current_token_ptr){
   
 }
 
+//function to handle variable reassignment
+Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
+      Token *token=*current_token_ptr;
+      Node *update_variable_node=initialize_node(NULL,"UPDATE",token->type);
+      node->left=update_variable_node;
+      token++;
+    //At this point the current token should be an assignment operator
+    if(token->type==OPERATOR &&strcmp(token->value,"=")==0){
+      // Node *curr=handle_identifier(identifier_node,&current_token);
+      // current=curr;
+      Node *op_node=initialize_node(NULL,token->value,token->type);
+      update_variable_node->left=op_node;
+      token--;
+      //we go back to the identifier
+      Node *identifier_node=initialize_node(NULL,token->value,token->type);
+      op_node->left=identifier_node;
+      //skip twice since we have already processed the assignment operator
+      token++;
+      token++;
+      if(strcmp(token->value,"EOF")==0){
+      end_of_tokens_error(token->line_num);
+      }
+      // at this point the current token should be an identifier ,integer or an expression
+      if(token->type==IDENTIFIER || token->type==INT){
+          op_node->right=parse_expression(&token);
+      }else{
+        missing_token_error("identifier, integer or an expression",*(token-1));
+      }
+      //At this point we should have a semi colon to terminate this our statement.
+      if(token->type==SEPARATOR&&strcmp(token->value,";")==0){
+        Node *semi_colon_node=initialize_node(NULL,token->value,token->type);
+        update_variable_node->right=semi_colon_node;
+
+        token++;
+      }else{
+        missing_token_error(";",*(token-1));
+      }
+
+    }else{
+    missing_token_error("=",*(token-1));
+    }
+
+    *current_token_ptr=token;
+
+   return update_variable_node->right;
+   
+}
+
 // function to parse tokens and create AST
- 
-  
 Node *parser(Token *tokens) {
+   
     Token *current_token=&tokens[0];
 
     Node *current=malloc(sizeof(Node));
@@ -308,8 +363,12 @@ Node *parser(Token *tokens) {
     Node *left=malloc(sizeof(Node));
    
     root=initialize_node(root,"START",BEGINNING);
-    
-    current=root;
+    //initialize a symbol table for the global scope
+    Table *global_table=create_table();
+     //Initial I need to have this scope pushed onto the stack
+      // Push the global scope initially
+      push_scope(global_table);
+      current=root;
     
     while(strcmp(current_token->value,"EOF")){
 
@@ -324,16 +383,38 @@ Node *parser(Token *tokens) {
                 
                
            }
-
-           
           break;
         
         case IDENTIFIER:
-           
-           current_token++;
+           //variable updating or reassignment
+           // check if the variable is declared before updating it
+           if(current_token->type==IDENTIFIER){
+                
+               if(!check_variable(current_token->value)){
+                  fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", current_token->value, current_token->line_num);
+                  exit(1);
+           }
+             
+            Node *semi_colon_node=handle_variable_reassignment(current,&current_token);
+            current=semi_colon_node;
+          }
+          
            break; 
 
         case SEPARATOR:
+          if (strcmp(current_token->value,"{")==0){
+             //this indicates that we are entering a new scope
+            
+              Table *new_scope=create_table();
+             
+              push_scope(new_scope);
+              
+          }else if(strcmp(current_token->value,"}")==0){
+             //this indicates that we are exiting a scope
+              pop_scope();
+              
+              
+          }
           current_token++;
           
           break;
