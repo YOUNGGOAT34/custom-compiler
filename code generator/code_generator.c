@@ -1,15 +1,72 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include "code_generator.h"
 
+static int if_label_counter=0;
+void traverse(Node *root, FILE *file);
+
+
+void if_statement(Node *root,FILE *file){
+   char label[64];
+   sprintf(label, ".Lend_if%d", if_label_counter++);
+    
+    Node *condition=root->left->left;
+    Node *code_block=root->left->right;
+    Node *lhs=condition->left;
+    Node *rhs=condition->right;
+
+    // Generate code for lhs
+    if (lhs->type == IDENTIFIER)
+        fprintf(file, "\tmov rax, [%s]\n", lhs->value);
+    else
+        fprintf(file, "\tmov rax, %s\n", lhs->value);
+
+    // Generate code for rhs
+    if (rhs->type == IDENTIFIER)
+        fprintf(file, "\tmov rbx, [%s]\n", rhs->value);
+    else
+        fprintf(file, "\tmov rbx, %s\n", rhs->value);
+
+   //since we have the lhs and rhs in rax and rbx respectfully ,now we should do the conditional check (CMP)
+   fprintf(file,"\tcmp rax,rbx\n");
+   
+   //jump based on the result
+         if (strcmp(condition->value, "==") == 0)
+         fprintf(file, "\tjne %s\n", label); // jump if NOT equal (i.e., skip block)
+      else if (strcmp(condition->value, "!=") == 0)
+         fprintf(file, "\tje %s\n", label);  // jump if equal (i.e., skip block)
+      else if (strcmp(condition->value, "<") == 0)
+         fprintf(file, "\tjge %s\n", label); // jump if a >= b → skip block
+      else if (strcmp(condition->value, "<=") == 0)
+         fprintf(file, "\tjg %s\n", label);  // jump if a > b → skip block
+      else if (strcmp(condition->value, ">") == 0)
+         fprintf(file, "\tjle %s\n", label); // jump if a <= b → skip block
+      else if (strcmp(condition->value, ">=") == 0)
+         fprintf(file, "\tjl %s\n", label);  // jump if a < b → skip block
+
+    else {
+        fprintf(stderr, "Unsupported operator in if condition: %s\n", condition->value);
+        exit(1);
+    }
+
+   //traverse the code block 
+   
+   traverse(code_block,file);
+   fprintf(file, "%s:\n", label);
+  
+}
 
 void generate_data_section(Node *root,FILE *file){
- 
+   
    if(!root) return;
+   
+  
+  
    //if the function encounters a variable it defines it in the data section
    if( strcmp(root->value,"int")==0 &&root->left){
      
       fprintf(file,"\t%s dq 0\n",root->left->left->value);//root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
-                                                          //then left of equal there is variable name ,and right is the expression or a value
+                                                         //then left of equal there is variable name ,and right is the expression or a value
      
    }
 
@@ -20,6 +77,11 @@ void generate_data_section(Node *root,FILE *file){
 void traverse(Node *root, FILE *file) {
   if (!root) return;
    
+  if (strcmp(root->value, "if") == 0) {
+   if_statement(root,file);
+   return;
+   
+}
   // Recursively process left and right subtrees first (Post-Order): left->right->root
   traverse(root->left, file);
   traverse(root->right, file);
@@ -52,20 +114,23 @@ void traverse(Node *root, FILE *file) {
     fprintf(file,"\tpush rax\n");
 
    }else if(root->type==IDENTIFIER && strcmp(root->value,"UPDATE")){
+      
       fprintf(file,"\tmov rax,[%s]\n",root->value);
       fprintf(file,"\tpush rax\n");
    }else if(strcmp(root->value,"UPDATE")==0){
       root=root->left;
    }
 
-  // Handle exit syscall if root contains "exit"
+    // Handle exit syscall if root contains "exit"
   if (strcmp(root->value, "exit") == 0) {
-      fprintf(file, "\tpop rdi\n"); // Final result to rdi before exiting
-      fprintf(file, "\tmov rax, 60\n"); // Exit syscall
-      fprintf(file, "\tsyscall\n");
-      //not checking for the semi colon since the parent is the last to be evaluated ,,post order traversal
-  }
+   fprintf(file, "\tpop rdi\n"); // Final result to rdi before exiting
+   fprintf(file, "\tmov rax, 60\n"); // Exit syscall
+   fprintf(file, "\tsyscall\n");
+   //not checking for the semi colon since the parent is the last to be evaluated ,,post order traversal
 }
+}
+
+
 
 
 void code_generator(Node *root){

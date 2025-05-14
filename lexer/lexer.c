@@ -231,7 +231,7 @@ Token *lexer(FILE *file){
     
     tokens[tokens_index].value=strdup("EOF");
     tokens[tokens_index].type=END_OF_TOKENS;
-    tokens[tokens_index].line_num=line_num-1;
+    tokens[tokens_index].line_num=line_num;
     tokens_index++;
     
     // Clean up
@@ -246,11 +246,14 @@ Token *lexer(FILE *file){
 
 void print_tokens(Token *tokens){
     int index=0;
-    do{
+     Token *token=tokens;
+     while(token->value){
+      printf("TOKEN TYPE: %s , TOKEN VALUE: %s , on line: %zu\n",token_type_to_string(tokens[index].type),token->value,token->line_num);
+      token++;
+     }
         
-         printf("TOKEN TYPE: %s , TOKEN VALUE: %s , on line: %zu\n",token_type_to_string(tokens[index].type),tokens[index].value,tokens[index].line_num);
-         index++;
-    }while(tokens[index].value);
+        
+  
 
     
 }

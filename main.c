@@ -24,11 +24,11 @@ int main(){
   //  print_tokens(tokens);
    Node *root= parser(tokens);
    
-  //  code_generator(root);
+   code_generator(root);
 
    system("nasm -f elf64 ../generated.asm -o generated.o");
    system("ld generated.o -o generated");
-   printf("\n");
+ 
   
   // print_table();
 
