@@ -1,8 +1,11 @@
-int a=3;
+int d=1;
 
 if(1>2){
+    d=3;
    
-    a=4+2;
+}else{
+    d=2;
+   
 }
 
-exit(a);
+exit(d);

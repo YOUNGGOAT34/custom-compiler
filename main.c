@@ -30,16 +30,9 @@ int main(){
    system("ld generated.o -o generated");
  
   
-  // print_table();
+  // // print_table();
 
-  
   return WEXITSTATUS(system("./generated"));
-
-  
-
- 
-
-  
 
 }
 

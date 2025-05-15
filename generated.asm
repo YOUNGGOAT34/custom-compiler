@@ -1,38 +1,43 @@
 section .data
-	a dq 0
+	d dq 0
 section .text
 	global _start
 _start:
-	mov rax,[a]
+	mov rax,[d]
 	push rax
-	mov rax,3
+	mov rax,1
 	push rax
 	pop rbx
-	mov [a],rbx
+	mov [d],rbx
 	pop rdi
 	pop rax
 	push rax
 	mov rax, 1
 	mov rbx, 2
 	cmp rax,rbx
-	jle .Lend_if0
-	mov rax,[a]
+	jle ._else0
+	mov rax,[d]
 	push rax
-	mov rax,4
+	mov rax,3
+	push rax
+	pop rbx
+	mov [d],rbx
+	pop rdi
+	pop rax
+	push rax
+	jmp .end_if1
+._else0:
+	mov rax,[d]
 	push rax
 	mov rax,2
 	push rax
-	pop rdi
-	pop rax
-	add rax,rdi
-	push rax
 	pop rbx
-	mov [a],rbx
+	mov [d],rbx
 	pop rdi
 	pop rax
 	push rax
-.Lend_if0:
-	mov rax,[a]
+.end_if1:
+	mov rax,[d]
 	push rax
 	pop rdi
 	mov rax, 60

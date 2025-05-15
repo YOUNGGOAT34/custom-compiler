@@ -7,13 +7,17 @@ void traverse(Node *root, FILE *file);
 
 
 void if_statement(Node *root,FILE *file){
-   char label[64];
-   sprintf(label, ".Lend_if%d", if_label_counter++);
+   char end_label[64],else_lable[64];
+   sprintf(else_lable, "._else%d", if_label_counter++);
+   sprintf(end_label, ".end_if%d", if_label_counter++);
+   
     
     Node *condition=root->left->left;
     Node *code_block=root->left->right;
+    Node *else_block=root->right;
     Node *lhs=condition->left;
     Node *rhs=condition->right;
+
 
     // Generate code for lhs
     if (lhs->type == IDENTIFIER)
@@ -32,17 +36,17 @@ void if_statement(Node *root,FILE *file){
    
    //jump based on the result
          if (strcmp(condition->value, "==") == 0)
-         fprintf(file, "\tjne %s\n", label); // jump if NOT equal (i.e., skip block)
+         fprintf(file, "\tjne %s\n", else_lable); // jump if NOT equal (i.e., skip block)
       else if (strcmp(condition->value, "!=") == 0)
-         fprintf(file, "\tje %s\n", label);  // jump if equal (i.e., skip block)
+         fprintf(file, "\tje %s\n",else_lable);  // jump if equal (i.e., skip block)
       else if (strcmp(condition->value, "<") == 0)
-         fprintf(file, "\tjge %s\n", label); // jump if a >= b → skip block
+         fprintf(file, "\tjge %s\n", else_lable); // jump if a >= b → skip block
       else if (strcmp(condition->value, "<=") == 0)
-         fprintf(file, "\tjg %s\n", label);  // jump if a > b → skip block
+         fprintf(file, "\tjg %s\n", else_lable);  // jump if a > b → skip block
       else if (strcmp(condition->value, ">") == 0)
-         fprintf(file, "\tjle %s\n", label); // jump if a <= b → skip block
+         fprintf(file, "\tjle %s\n", else_lable); // jump if a <= b → skip block
       else if (strcmp(condition->value, ">=") == 0)
-         fprintf(file, "\tjl %s\n", label);  // jump if a < b → skip block
+         fprintf(file, "\tjl %s\n", else_lable);  // jump if a < b → skip block
 
     else {
         fprintf(stderr, "Unsupported operator in if condition: %s\n", condition->value);
@@ -50,9 +54,13 @@ void if_statement(Node *root,FILE *file){
     }
 
    //traverse the code block 
-   
-   traverse(code_block,file);
-   fprintf(file, "%s:\n", label);
+   traverse(code_block->left,file);
+
+   fprintf(file, "\tjmp %s\n", end_label);
+   fprintf(file, "%s:\n", else_lable);
+   traverse(else_block,file);
+   fprintf(file, "%s:\n",end_label);
+
   
 }
 

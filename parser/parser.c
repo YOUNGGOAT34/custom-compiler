@@ -233,7 +233,7 @@ void variable_redefination(Variable *var){
 Node *create_variables(Node *current,Token **current_token_ptr){
   
     Token *token=*current_token_ptr;
-    printf("HERE %s\n",token->value);
+    
     //allocate memory for the variable
     Variable *variable=malloc(sizeof(Variable));
     Node *var_node=initialize_node(NULL,token->value,token->type);
@@ -454,11 +454,9 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                         
                         node=create_variables(node,&token);
                        
-                        
-                        
                       }
                      }
-                     
+                       
                       
                       if(strcmp(token->value,"}")==0){
                         pop_scope();
@@ -466,8 +464,47 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                          Node *close_curly_node=initialize_node(NULL,token->value,token->type);
                          close_parens_node->right=close_curly_node;
                          
-                         node=close_curly_node;
+                         
                          token++;
+                         if(strcmp(token->value,"else")==0 && token->type==KEYWORD){
+                            Node *else_node=initialize_node(NULL,token->value,token->type);
+                            if_statement_node->right=else_node;
+                            token++;
+                            //This is open curly '{'
+                           
+                            Table *new_scope=create_table();
+                            push_scope(new_scope);
+                            Node *open_curly_node=initialize_node(NULL,token->value,token->type);
+                            else_node->left=open_curly_node;
+                            node=open_curly_node;
+                            token++;
+                          
+                            while (strcmp(token->value,"}")!=0){
+                           
+                              //if it is a new variable we create a variabe,,if it is an identifier we update or reuse it
+                              if(token->type==IDENTIFIER){
+                                
+                                 node=handle_variable_reassignment(node,&token);
+                                 
+                                  
+                              }
+                              if(strcmp(token->value,"int")==0){
+                               
+                                node=create_variables(node,&token);
+                                
+                              }
+                             
+                            }
+
+                            //we have reached the closing curly brace,,end of scope
+                            
+                            pop_scope();
+                            Node *close_curly_node=initialize_node(NULL,token->value,token->type);
+                            else_node->right=close_curly_node;
+                            node=close_curly_node;
+                            token++;
+
+                         }
                          
                       }
                   }else{
@@ -493,6 +530,27 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
    return node;
 
 }
+
+// void helper(Node *node){
+ 
+//   if (!node) return;
+//   printf("Node value: %s \n",node->value);
+//   helper(node->left);
+//   helper(node->right);
+// }
+
+// void Traverse(Node *root){
+// if(!root) return;
+// if(strcmp(root->value,"else")==0){
+  
+//   helper(root);
+// }
+ 
+// Traverse(root->left);
+// Traverse(root->right);
+
+// }
+
 
 // function to parse tokens and create AST
 Node *parser(Token *tokens) {
@@ -584,6 +642,8 @@ Node *parser(Token *tokens) {
 
   
    print_tree(root,5);
+
+
 
    return root;
     
