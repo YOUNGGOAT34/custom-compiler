@@ -5,7 +5,7 @@ events:
     kind: "message-v1"
     backtrace:
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineSystem.cmake:205 (message)"
-      - "CMakeLists.txt:4 (project)"
+      - "CMakeLists.txt:3 (project)"
     message: |
       The system is: Linux - 6.11.2-amd64 - x86_64
   -
@@ -14,7 +14,7 @@ events:
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:4 (project)"
+      - "CMakeLists.txt:3 (project)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
       Compiler: /usr/bin/clang-18 
@@ -35,12 +35,12 @@ events:
     backtrace:
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
       - "/usr/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:4 (project)"
+      - "CMakeLists.txt:3 (project)"
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz"
-      binary: "/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz"
+      source: "/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn"
+      binary: "/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_C_FLAGS_DEBUG: "-g"
@@ -49,13 +49,13 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz'
+        Change Dir: '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn'
         
-        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c66da/fast
-        /usr/bin/gmake  -f CMakeFiles/cmTC_c66da.dir/build.make CMakeFiles/cmTC_c66da.dir/build
-        gmake[1]: Entering directory '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz'
-        Building C object CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o
-        /usr/bin/clang-18   -v -MD -MT CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_25e57/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_25e57.dir/build.make CMakeFiles/cmTC_25e57.dir/build
+        gmake[1]: Entering directory '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn'
+        Building C object CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o
+        /usr/bin/clang-18   -v -MD -MT CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c
         Debian clang version 18.1.8 (13+b1)
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -67,7 +67,7 @@ events:
         Candidate multilib: x32;@mx32
         Selected multilib: .;@m64
          (in-process)
-         "/usr/lib/llvm-18/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb "-fdebug-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz" -v "-fcoverage-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz" -resource-dir /usr/lib/llvm-18/lib/clang/18 -dependency-file CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-18/lib/clang/18/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -dwarf-debug-flags "/usr/lib/llvm-18/bin/clang -v -MD -MT CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c" -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+         "/usr/lib/llvm-18/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb "-fdebug-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn" -v "-fcoverage-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn" -resource-dir /usr/lib/llvm-18/lib/clang/18 -dependency-file CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-18/lib/clang/18/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -dwarf-debug-flags "/usr/lib/llvm-18/bin/clang -v -MD -MT CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c" -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c
         clang -cc1 version 18.1.8 based upon LLVM 18.1.8 default target x86_64-pc-linux-gnu
         ignoring nonexistent directory "/usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"
         ignoring nonexistent directory "/include"
@@ -78,9 +78,9 @@ events:
          /usr/include/x86_64-linux-gnu
          /usr/include
         End of search list.
-        Linking C executable cmTC_c66da
-        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c66da.dir/link.txt --verbose=1
-        /usr/bin/clang-18  -v -Wl,-v CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -o cmTC_c66da
+        Linking C executable cmTC_25e57
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_25e57.dir/link.txt --verbose=1
+        /usr/bin/clang-18  -v -Wl,-v CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -o cmTC_25e57
         Debian clang version 18.1.8 (13+b1)
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -91,9 +91,9 @@ events:
         Candidate multilib: 32;@m32
         Candidate multilib: x32;@mx32
         Selected multilib: .;@m64
-         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_c66da /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14 -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_25e57 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14 -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Debian) 2.43.90.20250127
-        gmake[1]: Leaving directory '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz'
+        gmake[1]: Leaving directory '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn'
         
       exitCode: 0
   -
@@ -101,7 +101,7 @@ events:
     backtrace:
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
       - "/usr/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:4 (project)"
+      - "CMakeLists.txt:3 (project)"
     message: |
       Parsed C implicit include dir info: rv=done
         found start of include info
@@ -123,18 +123,18 @@ events:
     backtrace:
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
       - "/usr/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:4 (project)"
+      - "CMakeLists.txt:3 (project)"
     message: |
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz']
+        ignore line: [Change Dir: '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn']
         ignore line: []
-        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c66da/fast]
-        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_c66da.dir/build.make CMakeFiles/cmTC_c66da.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz']
-        ignore line: [Building C object CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o]
-        ignore line: [/usr/bin/clang-18   -v -MD -MT CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_25e57/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_25e57.dir/build.make CMakeFiles/cmTC_25e57.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn']
+        ignore line: [Building C object CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/usr/bin/clang-18   -v -MD -MT CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
         ignore line: [Debian clang version 18.1.8 (13+b1)]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -150,7 +150,7 @@ events:
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
         ignore line: [ (in-process)]
-        ignore line: [ "/usr/lib/llvm-18/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb "-fdebug-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz" -v "-fcoverage-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-hSJMWz" -resource-dir /usr/lib/llvm-18/lib/clang/18 -dependency-file CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-18/lib/clang/18/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -dwarf-debug-flags "/usr/lib/llvm-18/bin/clang -v -MD -MT CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c" -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [ "/usr/lib/llvm-18/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb "-fdebug-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn" -v "-fcoverage-compilation-dir=/home/goat/Desktop/custom compiler/build/CMakeFiles/CMakeScratch/TryCompile-GsXAcn" -resource-dir /usr/lib/llvm-18/lib/clang/18 -dependency-file CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-18/lib/clang/18/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -dwarf-debug-flags "/usr/lib/llvm-18/bin/clang -v -MD -MT CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c" -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
         ignore line: [clang -cc1 version 18.1.8 based upon LLVM 18.1.8 default target x86_64-pc-linux-gnu]
         ignore line: [ignoring nonexistent directory "/usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"]
         ignore line: [ignoring nonexistent directory "/include"]
@@ -161,9 +161,9 @@ events:
         ignore line: [ /usr/include/x86_64-linux-gnu]
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
-        ignore line: [Linking C executable cmTC_c66da]
-        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c66da.dir/link.txt --verbose=1]
-        ignore line: [/usr/bin/clang-18  -v -Wl -v CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -o cmTC_c66da]
+        ignore line: [Linking C executable cmTC_25e57]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_25e57.dir/link.txt --verbose=1]
+        ignore line: [/usr/bin/clang-18  -v -Wl -v CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -o cmTC_25e57]
         ignore line: [Debian clang version 18.1.8 (13+b1)]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -178,7 +178,7 @@ events:
         ignore line: [@mx32]
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
-        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_c66da /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14 -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_25e57 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14 -L/usr/bin/../lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [--hash-style=gnu] ==> ignore
           arg [--build-id] ==> ignore
@@ -189,7 +189,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_c66da] ==> ignore
+          arg [cmTC_25e57] ==> ignore
           arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
           arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
           arg [/usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtbeginS.o] ==> obj [/usr/bin/../lib/gcc/x86_64-linux-gnu/14/crtbeginS.o]
@@ -202,7 +202,7 @@ events:
           arg [-L/lib] ==> dir [/lib]
           arg [-L/usr/lib] ==> dir [/usr/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_c66da.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_25e57.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [-lgcc] ==> lib [gcc]
           arg [--as-needed] ==> ignore
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -237,7 +237,7 @@ events:
       - "/usr/share/cmake-3.30/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
       - "/usr/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
       - "/usr/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:4 (project)"
+      - "CMakeLists.txt:3 (project)"
     message: |
       Running the C compiler's linker: "/usr/bin/ld" "-v"
       GNU ld (GNU Binutils for Debian) 2.43.90.20250127
