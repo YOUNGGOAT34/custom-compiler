@@ -12,12 +12,12 @@ typedef struct {
      
 } ScopeStack;
 
-void init_scope_stack();
+void init_scope_stack(void);
 void push_scope(Table *table);
-void pop_scope();
-Table *current_scope();
+void pop_scope(void);
+Table *current_scope(void);
 Variable *search_variable(const char *name);
 
-extern ScopeStack scope_stack;
+
 
 #endif

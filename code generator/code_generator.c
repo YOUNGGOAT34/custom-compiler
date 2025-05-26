@@ -14,7 +14,8 @@ void while_statement(Node *root,FILE *file){
     sprintf(end_loop,"end_while%d",label_counter);
     //get the code block,condition block
     Node *condition=root->left->left;
-    Node *code_block=root->left->right;
+    Node *code_block=root->left->right->left;
+   
     //we also need the lhs and rhs of the condition
     Node *rhs=condition->right;
     Node *lhs=condition->left;
@@ -40,8 +41,10 @@ void while_statement(Node *root,FILE *file){
     }
 
     traverse(code_block,file);
+   
     fprintf(file,"\tjmp %s\n",start_loop);
     fprintf(file,"%s:\n",end_loop);
+    traverse(root->left->right->right,file);
 
     return;
 }
@@ -170,8 +173,10 @@ void traverse(Node *root, FILE *file) {
    // return;
    
    }else if(strcmp(root->value,"while")==0){
+      
       while_statement(root,file);
-      // return;
+    
+      
    }else{
 
 
@@ -249,5 +254,3 @@ void code_generator(Node *root){
   fclose(file);
 
 }
-
-

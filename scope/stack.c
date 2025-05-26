@@ -5,7 +5,7 @@
 
 ScopeStack scope_stack;
 
-void init_scope_stack() {
+void init_scope_stack(void) {
     scope_stack.top = -1;
 }
 
@@ -22,7 +22,7 @@ void push_scope(Table *table) {
     scope_stack.size++;
 }
 
-void pop_scope() {
+void pop_scope(void) {
     if (scope_stack.top < 0) {
         printf("Scope stack underflow\n");
         exit(1);
@@ -31,7 +31,7 @@ void pop_scope() {
     scope_stack.top--;
 }
 
-Table *current_scope() {
+Table *current_scope(void) {
     if (scope_stack.top < 0) {
         printf("No active scope\n");
         exit(1);

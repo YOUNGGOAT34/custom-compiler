@@ -10,6 +10,7 @@
 
 #define GLOABALSPACE 5
 
+
  //for the symbol table
 
 
@@ -19,6 +20,11 @@ typedef struct Node{
    struct Node *left;
   struct Node *right;
 } Node;
+
+Node *create_variables(Node *current,Token **current_token_ptr);
+Node *while_statement_generation(Node *node,Token **);
+
+Node *handle_variable_reassignment(Node *node,Token **current_token_ptr);
 
 
 //Initialize node
@@ -71,6 +77,106 @@ void missing_token_error(char *token,Token prev_token){
 }
 
 
+//Function to create functions
+/*
+  so I go throught the input ,encounter a data type i.e int, char or something else ,I know it might be a variable or a function
+  The program will know that it is a function if after the identifier ,it sees a ( ..
+
+  Since it is certain that we have upto the ( ,there is no point of checking that there might be unexpected token or end of tokens
+  We already checked it in the create variable function
+*/
+
+Node *create_function(Node *node,Token **current_token_ptr){
+  Token *token=*current_token_ptr;
+  
+  Node *return_type_node=initialize_node(token->value,token->type);
+  node->left=return_type_node;
+  token++;
+  //Identifier node
+  Node *identifier_node=initialize_node(token->value,token->type);
+  return_type_node->left=identifier_node;
+  token++;
+  Node *open_parens_node=initialize_node(token->value,token->type);
+  identifier_node->left=open_parens_node;
+  token++;
+ //close parenthesis node
+ if(strcmp(token->value,")")==0){
+    
+    Node *close_parens_node=initialize_node(token->value,token->type);
+    open_parens_node->right=close_parens_node;
+     token++;
+     if(strcmp(token->value,"EOF")==0){
+       end_of_tokens_error(token->line_num);
+     }
+     //This is supposed to be open curly braces
+     if(strcmp(token->value,"{")==0){
+        Table *new_table=create_table();
+        push_scope(new_table);
+        Node *open_curly_node=initialize_node(token->value,token->type);
+        open_parens_node->left=open_curly_node;
+        node=open_curly_node;
+        token++;
+        while(strcmp(token->value,"return")!=0){
+          if(strcmp(token->value,"int")==0){
+             node=create_variables(node,&token);
+          }else if(token->type==IDENTIFIER){
+            
+            node=handle_variable_reassignment(node,&token);
+          }else if(strcmp(token->value,"while")==0){
+            node=while_statement_generation(node,&token);
+          }
+        }
+
+        //return statement
+        if(strcmp(token->value,"return")==0){
+          Node *return_statement=initialize_node(token->value,token->type);
+          node->left=return_statement;
+          token++;
+          //return value
+          if(token->type==IDENTIFIER || token->type==INT){
+            Node *return_value_node=initialize_node(token->value,token->type);
+            return_statement->left=return_value_node;
+            token++;
+            //semi colon
+            if(strcmp(token->value,";")==0){
+              Node *semi_colon_node=initialize_node(token->value,token->type);
+              return_statement->right=semi_colon_node;
+              token++;
+            }else{
+              missing_token_error(";",*(token-1));
+            }
+           
+
+          }else{
+             missing_token_error("integer or an identifier",*(token-1));
+          }
+         
+
+        }else{
+          missing_token_error("return",*(token-1));
+        }
+        
+       
+        //close curly
+        if(strcmp(token->value,"}")==0){
+         Node *close_curly_node=initialize_node(token->value,token->type);
+         close_parens_node->right=close_curly_node;
+         node=close_curly_node;
+        }else{
+          missing_token_error("}",*(token-1));
+        }
+     }else{
+        missing_token_error("{",*(token-1));
+     }
+ }
+
+
+ 
+ *current_token_ptr=token;
+ 
+ pop_scope();
+ return node;
+}
 
 
 //parse primary expression.
@@ -242,27 +348,35 @@ void variable_redefination(Variable *var){
 Node *create_variables(Node *current,Token **current_token_ptr){
   
     Token *token=*current_token_ptr;
-    
+   
     //allocate memory for the variable
     Variable *variable=malloc(sizeof(Variable));
     Node *var_node=initialize_node(token->value,token->type);
     //variable type i.e int,char ,float etc....
     variable->type=token->value;
-    
+   
     current->left=var_node;
     token++;
-    // The next expected is an identifie;
+    // The next expected is an identifier;
     if(strcmp(token->value,"EOF")==0){
        end_of_tokens_error(token->line_num);
     }
    
     if (token->type==IDENTIFIER){
        token++;
-
+      
        if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
       }
+     
+      //check if it is a function
+      if(strcmp(token->value,"(")==0) {
+       
+        return create_function(current,current_token_ptr);
+      }
 
+     
+     
      Node *operator_node=initialize_node(token->value,token->type);
 
       if (token->type==OPERATOR){
@@ -279,19 +393,26 @@ Node *create_variables(Node *current,Token **current_token_ptr){
         if (existing != NULL) {
             variable_redefination(existing); // handle the redeclaration error
         }
+        
+       
        //name of the variable(identifier)
        variable->name = strdup(token->value);
-       variable->type = strdup(token->value);
+      
        //insert the variable into the symbol table.
-       hashmap_insert(current_scope()->map, variable->name, variable);
+      
        
+       hashmap_insert(current_scope()->map, variable->name, variable);
+      
        operator_node->left=identifier_node;
+     
        token++;
        token++;
        //next token expected should be an integer or an expression
       if(strcmp(token->value,"EOF")==0){
-      end_of_tokens_error(token->line_num);
+        end_of_tokens_error(token->line_num);
        }
+
+      
     
       if (token->type==INT){
         
@@ -317,11 +438,13 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     var_node->right=semi_colon_node;
     
     token++;
+   
   }else{
     missing_token_error(";",*(token-1));
   }
  
   *current_token_ptr=token;
+ 
   return var_node->right;
   
 }
@@ -330,6 +453,10 @@ Node *create_variables(Node *current,Token **current_token_ptr){
 Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
     
       Token *token=*current_token_ptr;
+      // if(!check_variable(token->value)) {
+      //   perror("not defined\n");
+      //   exit(1);
+      // }
       Node *update_variable_node=initialize_node("UPDATE",token->type);
       node->left=update_variable_node;
       token++;
@@ -341,6 +468,11 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
       update_variable_node->left=op_node;
       token--;
       //we go back to the identifier
+      if(token->type==IDENTIFIER && !check_variable(token->value)){
+          
+        fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value, token->line_num);
+        exit(1);
+      }
       Node *identifier_node=initialize_node(token->value,token->type);
       op_node->left=identifier_node;
       //skip twice since we have already processed the assignment operator
@@ -351,8 +483,9 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
       }
       // at this point the current token should be an identifier ,integer or an expression
       if(token->type==IDENTIFIER || token->type==INT){
-        
+      
         if(token->type==IDENTIFIER && !check_variable(token->value)){
+          
           fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value, token->line_num);
           exit(1);
         }
@@ -472,7 +605,7 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                     }
                       if(strcmp(token->value,"}")==0){
                         
-                      
+                         
                          Node *close_curly_node=initialize_node(token->value,token->type);
                          close_parens_node->right=close_curly_node;
                          node=close_curly_node;
@@ -667,25 +800,6 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
 
 }
 
-// void helper(Node *node){
- 
-//   if (!node) return;
-//   printf("Node value: %s \n",node->value);
-//   helper(node->left);
-//   helper(node->right);
-// }
-
-// void Traverse(Node *root){
-// if(!root) return;
-// if(strcmp(root->value,"else")==0){
-  
-//   helper(root);
-// }
- 
-// Traverse(root->left);
-// Traverse(root->right);
-
-// }
 
 
 // function to parse tokens and create AST
@@ -715,9 +829,19 @@ Node *parser(Token *tokens) {
                
                break;
            }else if(strcmp(current_token->value,"int")==0){
+               //so this can be a variable being created or a function being created..
+               /*
+                Instead of handling variable and function creation diffently in here
+                Just let the program go to create_variables function then in there ,if the token after the identifier is '(' instead of '=' 
+                call the create_function function 
+               */
+
+              
+              
                Node *var_left=create_variables(current,&current_token);
                current=var_left;
-                
+               
+              
                
            }else if (strcmp(current_token->value,"if")==0){
                //closed curly brace is what we will evaluate last and return it,,so it will be the current node
@@ -738,7 +862,7 @@ Node *parser(Token *tokens) {
         case IDENTIFIER:
            //variable updating or reassignment
            // check if the variable is declared before updating it
-           printf("Here %s\n",current_token->value);
+          
            if(current_token->type==IDENTIFIER){
                 
                if(!check_variable(current_token->value)){
@@ -753,19 +877,7 @@ Node *parser(Token *tokens) {
            break; 
 
         case SEPARATOR:
-          if (strcmp(current_token->value,"{")==0){
-             //this indicates that we are entering a new scope
-            
-              Table *new_scope=create_table();
-             
-              push_scope(new_scope);
-              
-          }else if(strcmp(current_token->value,"}")==0){
-             //this indicates that we are exiting a scope
-              pop_scope();
-              
-              
-          }
+       
           current_token++;
           
           break;
@@ -795,4 +907,16 @@ Node *parser(Token *tokens) {
 
    return root;
     
+}
+//function to free allocated memory on the nodes
+/*
+ so I wanna do a dfs ,free memory starting from leaf nodes ,then the parent
+*/
+void free_nodes(Node *node){
+   if(!node) return;
+
+   free_nodes(node->left);
+   free_nodes(node->right);
+   free(node->value);
+   free(node);
 }

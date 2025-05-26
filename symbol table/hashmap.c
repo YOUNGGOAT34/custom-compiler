@@ -11,7 +11,7 @@ unsigned int hash(const char *key) {
     return hash % TABLE_SIZE;
 }
 
-Table *create_table() {
+Table *create_table(void) {
     Table *table = malloc(sizeof(Table));
      if(!table){
         perror("Failed to allocate  table");
@@ -57,5 +57,5 @@ void clear_hashmap(HashMap *map) {
             free(temp); // Free the Entry
         }
     }
-    free(map); // Free the HashMap itself if you plan to allocate a new one
+    free(map); 
 }

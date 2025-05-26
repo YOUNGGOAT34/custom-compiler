@@ -8,12 +8,13 @@
 
 
 
-Node *createNode(char *val);
-Node *parser(Token *tokens);
-void handle_exit_system(Node *current,Token **current_token);
-Node *parse_expression(Token **current_token_ptr);
-Node *parse_primary(Token **current_token_ptr);
-Node *parse_multiplication(Token **current_token_ptr);
-void preorderTraversal(Node* root);
+Node *createNode(char *);
+Node *parser(Token *);
+
+void handle_exit_system(Node *current,Token **);
+Node *parse_expression(Token **);
+Node *parse_primary(Token **);
+Node *parse_multiplication(Token **);
+void preorderTraversal(Node*);
 
 #endif

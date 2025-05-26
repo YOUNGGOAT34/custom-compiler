@@ -1,13 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
-# Set the project name
-project("custom_compiler"
-   LANGUAGES C 
+project(custom_compiler LANGUAGES C)
 
-       
-)
+# Enable debug symbols if not already set externally
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
 
-
-
-# Add an executable
-add_executable(main main.c )
+add_executable(main main.c)

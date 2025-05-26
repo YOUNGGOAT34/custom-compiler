@@ -11,14 +11,15 @@
 
 
 
-int main(){
+
+int main(void){
     FILE *file=fopen("../test.g","r");
      if (file == NULL) {
         perror("Failed to open file");
         return 1;
     }
 
-    
+  
     
   Token *tokens=lexer(file);
   //  print_tokens(tokens);
@@ -33,6 +34,8 @@ int main(){
   // // print_table();
 
   return WEXITSTATUS(system("./generated"));
+  // return 0;
+
 
 }
 

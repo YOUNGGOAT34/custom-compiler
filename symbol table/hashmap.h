@@ -25,7 +25,7 @@ typedef struct {
     HashMap *map;
 } Table;
 
-Table *create_table();
+Table *create_table(void);
 void hashmap_insert(HashMap *map, const char *key, Variable *value);
 Variable *hashmap_get(HashMap *map, const char *key);
 
