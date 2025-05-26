@@ -75,33 +75,14 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
   /usr/include/x86_64-linux-gnu/sys/select.h \
   /usr/include/x86_64-linux-gnu/sys/types.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stdarg___gnuc_va_list.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_max_align_t.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_null.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_ptrdiff_t.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_size_t.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_wchar_t.h \
-  /usr/lib/llvm-18/lib/clang/18/include/stdarg.h \
-  /usr/lib/llvm-18/lib/clang/18/include/stdbool.h \
-  /usr/lib/llvm-18/lib/clang/18/include/stddef.h
+  /usr/lib/gcc/x86_64-linux-gnu/14/include/stdarg.h \
+  /usr/lib/gcc/x86_64-linux-gnu/14/include/stdbool.h \
+  /usr/lib/gcc/x86_64-linux-gnu/14/include/stddef.h
 
 
-/usr/lib/llvm-18/lib/clang/18/include/stdbool.h:
+/usr/lib/gcc/x86_64-linux-gnu/14/include/stddef.h:
 
-/usr/lib/llvm-18/lib/clang/18/include/stdarg.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stddef_wchar_t.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stddef_size_t.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stddef_ptrdiff_t.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stddef_null.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stddef_max_align_t.h:
+/usr/lib/gcc/x86_64-linux-gnu/14/include/stdbool.h:
 
 /usr/include/x86_64-linux-gnu/sys/types.h:
 
@@ -137,8 +118,6 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
 
 /home/goat/Desktop/custom\ compiler/lexer/lexer.h:
 
-/usr/lib/llvm-18/lib/clang/18/include/stddef.h:
-
 /usr/include/x86_64-linux-gnu/bits/types/locale_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:
@@ -150,6 +129,8 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
 /usr/include/features-time64.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/include/stdarg.h:
 
 /usr/include/x86_64-linux-gnu/bits/uintn-identity.h:
 
@@ -186,8 +167,6 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
 /home/goat/Desktop/custom\ compiler/symbol\ table/hashmap.c:
 
 /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
-
-/usr/lib/llvm-18/lib/clang/18/include/__stdarg___gnuc_va_list.h:
 
 /usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
 

@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/goat/Desktop/custom compiler/build",
-  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/main.c.o -c \"/home/goat/Desktop/custom compiler/main.c\"",
-  "file": "/home/goat/Desktop/custom compiler/main.c",
-  "output": "CMakeFiles/main.dir/main.c.o"
-}
-]

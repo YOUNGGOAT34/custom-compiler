@@ -1,1 +1,1 @@
-/usr/bin/clang-18 -g CMakeFiles/main.dir/main.c.o -o main
+/usr/bin/cc -g CMakeFiles/main.dir/main.c.o -o main
