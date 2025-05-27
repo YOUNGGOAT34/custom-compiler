@@ -4,7 +4,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-#include "lexer.c"
+
+#include <ctype.h>
+
+
+
+typedef enum {
+   BEGINNING,
+   INT,
+   KEYWORD,
+   SEPARATOR,
+   OPERATOR,
+   IDENTIFIER,
+   STRING,
+   UNKNOWN,
+   END_OF_TOKENS,
+ } TokenType;
+ 
+ typedef struct {
+   TokenType type;
+   char *value;
+   size_t line_num;
+ } Token;
+ 
+
+
+
+
 
 
 Token *lexer(FILE *);

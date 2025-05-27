@@ -129,6 +129,30 @@ main/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
+lexer/lexer.o: lexer/lexer.c.o
+.PHONY : lexer/lexer.o
+
+# target to build an object file
+lexer/lexer.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/lexer/lexer.c.o
+.PHONY : lexer/lexer.c.o
+
+lexer/lexer.i: lexer/lexer.c.i
+.PHONY : lexer/lexer.i
+
+# target to preprocess a source file
+lexer/lexer.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/lexer/lexer.c.i
+.PHONY : lexer/lexer.c.i
+
+lexer/lexer.s: lexer/lexer.c.s
+.PHONY : lexer/lexer.s
+
+# target to generate assembly for a file
+lexer/lexer.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/lexer/lexer.c.s
+.PHONY : lexer/lexer.c.s
+
 main.o: main.c.o
 .PHONY : main.o
 
@@ -153,6 +177,78 @@ main.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.c.s
 .PHONY : main.c.s
 
+parser/parser.o: parser/parser.c.o
+.PHONY : parser/parser.o
+
+# target to build an object file
+parser/parser.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/parser/parser.c.o
+.PHONY : parser/parser.c.o
+
+parser/parser.i: parser/parser.c.i
+.PHONY : parser/parser.i
+
+# target to preprocess a source file
+parser/parser.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/parser/parser.c.i
+.PHONY : parser/parser.c.i
+
+parser/parser.s: parser/parser.c.s
+.PHONY : parser/parser.s
+
+# target to generate assembly for a file
+parser/parser.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/parser/parser.c.s
+.PHONY : parser/parser.c.s
+
+scope/stack.o: scope/stack.c.o
+.PHONY : scope/stack.o
+
+# target to build an object file
+scope/stack.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/scope/stack.c.o
+.PHONY : scope/stack.c.o
+
+scope/stack.i: scope/stack.c.i
+.PHONY : scope/stack.i
+
+# target to preprocess a source file
+scope/stack.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/scope/stack.c.i
+.PHONY : scope/stack.c.i
+
+scope/stack.s: scope/stack.c.s
+.PHONY : scope/stack.s
+
+# target to generate assembly for a file
+scope/stack.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/scope/stack.c.s
+.PHONY : scope/stack.c.s
+
+symbol_table/hashmap.o: symbol_table/hashmap.c.o
+.PHONY : symbol_table/hashmap.o
+
+# target to build an object file
+symbol_table/hashmap.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/symbol_table/hashmap.c.o
+.PHONY : symbol_table/hashmap.c.o
+
+symbol_table/hashmap.i: symbol_table/hashmap.c.i
+.PHONY : symbol_table/hashmap.i
+
+# target to preprocess a source file
+symbol_table/hashmap.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/symbol_table/hashmap.c.i
+.PHONY : symbol_table/hashmap.c.i
+
+symbol_table/hashmap.s: symbol_table/hashmap.c.s
+.PHONY : symbol_table/hashmap.s
+
+# target to generate assembly for a file
+symbol_table/hashmap.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/symbol_table/hashmap.c.s
+.PHONY : symbol_table/hashmap.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,9 +258,21 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... main"
+	@echo "... lexer/lexer.o"
+	@echo "... lexer/lexer.i"
+	@echo "... lexer/lexer.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... parser/parser.o"
+	@echo "... parser/parser.i"
+	@echo "... parser/parser.s"
+	@echo "... scope/stack.o"
+	@echo "... scope/stack.i"
+	@echo "... scope/stack.s"
+	@echo "... symbol_table/hashmap.o"
+	@echo "... symbol_table/hashmap.i"
+	@echo "... symbol_table/hashmap.s"
 .PHONY : help
 
 

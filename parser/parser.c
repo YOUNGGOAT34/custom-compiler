@@ -1,32 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include<stdbool.h>
-#include <assert.h>
-#include <string.h>
-#include "../symbol table/hashmap.c"
-#include "../scope/stack.c"
 
+#include "parser.h"
 
 
 #define GLOABALSPACE 5
 
 
 
-
-
-typedef struct Node{
-  char *value;
-  TokenType type;
-  struct Node *left;
-  struct Node *right;
-} Node;
-
-Node *create_variables(Node *current,Token **current_token_ptr);
-Node *if_statement_generation(Node *node,Token **current_token_ptr);
-Node *while_statement_generation(Node *node,Token **);
-Node *handle_variable_reassignment(Node *node,Token **current_token_ptr);
-
-
+//The table will be global to track functions
+FunctionTable *function_table;
 //Initialize node
 
 Node *initialize_node(char *val,TokenType type){
@@ -39,8 +20,6 @@ Node *initialize_node(char *val,TokenType type){
 
     return node;
 }
-
-
 
 
 //visualize the AST
@@ -86,13 +65,27 @@ void missing_token_error(char *token,Token prev_token){
 */
 
 Node *create_function(Node *node,Token **current_token_ptr){
-  Token *token=*current_token_ptr;
+  //create a new Function variable..
+ 
+  /*
+  What we need :
+  function name ,
+  return type,
+  line number,
+  parameter: name and return type
+  paramer count
+
   
+  */
+  Token *token=*current_token_ptr;
   Node *return_type_node=initialize_node(token->value,token->type);
+  char *return_type=token->value;
+  Param *params;
   node->left=return_type_node;
   token++;
   //Identifier node
   Node *identifier_node=initialize_node(token->value,token->type);
+  char *name=token->value;
   return_type_node->left=identifier_node;
   token++;
   Node *open_parens_node=initialize_node(token->value,token->type);
@@ -133,11 +126,14 @@ Node *create_function(Node *node,Token **current_token_ptr){
           Node *return_statement=initialize_node(token->value,token->type);
           node->left=return_statement;
           token++;
-          //return value
+          /*
+           It is not necessarily that the return value is always a number or an identifier
+           It might be an expression therefore we need to parse this as a normal expression.
+          */
           if(token->type==IDENTIFIER || token->type==INT){
-            Node *return_value_node=initialize_node(token->value,token->type);
+            Node *return_value_node=parse_expression(&token);
             return_statement->left=return_value_node;
-            token++;
+            
             //semi colon
             if(strcmp(token->value,";")==0){
               Node *semi_colon_node=initialize_node(token->value,token->type);
@@ -147,7 +143,6 @@ Node *create_function(Node *node,Token **current_token_ptr){
               missing_token_error(";",*(token-1));
             }
            
-
           }else{
              missing_token_error("integer or an identifier",*(token-1));
           }
@@ -169,6 +164,9 @@ Node *create_function(Node *node,Token **current_token_ptr){
      }else{
         missing_token_error("{",*(token-1));
      }
+     
+
+     insert_function(function_table,name,return_type,params,0,token->line_num);
  }
 
 
@@ -824,6 +822,8 @@ Node *parser(Token *tokens) {
     Node *left=malloc(sizeof(Node));
    
     Node *root=initialize_node("START",BEGINNING);
+    //for functions
+    function_table=create_function_table();
     //initialize a symbol table for the global scope
     Table *global_table=create_table();
      //Initial I need to have this scope pushed onto the stack

@@ -73,27 +73,91 @@ CMakeFiles/main.dir/main.c.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c
 CMakeFiles/main.dir/main.c.o: CMakeFiles/main.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/main.dir/main.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/main.c.o -MF CMakeFiles/main.dir/main.c.o.d -o CMakeFiles/main.dir/main.c.o -c "/home/goat/Desktop/custom compiler/main.c"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/main.c.o -MF CMakeFiles/main.dir/main.c.o.d -o CMakeFiles/main.dir/main.c.o -c "/home/goat/Desktop/custom compiler/main.c"
 
 CMakeFiles/main.dir/main.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/main.dir/main.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "/home/goat/Desktop/custom compiler/main.c" > CMakeFiles/main.dir/main.c.i
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "/home/goat/Desktop/custom compiler/main.c" > CMakeFiles/main.dir/main.c.i
 
 CMakeFiles/main.dir/main.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/main.dir/main.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "/home/goat/Desktop/custom compiler/main.c" -o CMakeFiles/main.dir/main.c.s
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "/home/goat/Desktop/custom compiler/main.c" -o CMakeFiles/main.dir/main.c.s
+
+CMakeFiles/main.dir/parser/parser.c.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/parser/parser.c.o: /home/goat/Desktop/custom\ compiler/parser/parser.c
+CMakeFiles/main.dir/parser/parser.c.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/main.dir/parser/parser.c.o"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/parser/parser.c.o -MF CMakeFiles/main.dir/parser/parser.c.o.d -o CMakeFiles/main.dir/parser/parser.c.o -c "/home/goat/Desktop/custom compiler/parser/parser.c"
+
+CMakeFiles/main.dir/parser/parser.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/main.dir/parser/parser.c.i"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "/home/goat/Desktop/custom compiler/parser/parser.c" > CMakeFiles/main.dir/parser/parser.c.i
+
+CMakeFiles/main.dir/parser/parser.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/main.dir/parser/parser.c.s"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "/home/goat/Desktop/custom compiler/parser/parser.c" -o CMakeFiles/main.dir/parser/parser.c.s
+
+CMakeFiles/main.dir/lexer/lexer.c.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/lexer/lexer.c.o: /home/goat/Desktop/custom\ compiler/lexer/lexer.c
+CMakeFiles/main.dir/lexer/lexer.c.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/main.dir/lexer/lexer.c.o"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/lexer/lexer.c.o -MF CMakeFiles/main.dir/lexer/lexer.c.o.d -o CMakeFiles/main.dir/lexer/lexer.c.o -c "/home/goat/Desktop/custom compiler/lexer/lexer.c"
+
+CMakeFiles/main.dir/lexer/lexer.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/main.dir/lexer/lexer.c.i"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "/home/goat/Desktop/custom compiler/lexer/lexer.c" > CMakeFiles/main.dir/lexer/lexer.c.i
+
+CMakeFiles/main.dir/lexer/lexer.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/main.dir/lexer/lexer.c.s"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "/home/goat/Desktop/custom compiler/lexer/lexer.c" -o CMakeFiles/main.dir/lexer/lexer.c.s
+
+CMakeFiles/main.dir/scope/stack.c.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/scope/stack.c.o: /home/goat/Desktop/custom\ compiler/scope/stack.c
+CMakeFiles/main.dir/scope/stack.c.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/main.dir/scope/stack.c.o"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/scope/stack.c.o -MF CMakeFiles/main.dir/scope/stack.c.o.d -o CMakeFiles/main.dir/scope/stack.c.o -c "/home/goat/Desktop/custom compiler/scope/stack.c"
+
+CMakeFiles/main.dir/scope/stack.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/main.dir/scope/stack.c.i"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "/home/goat/Desktop/custom compiler/scope/stack.c" > CMakeFiles/main.dir/scope/stack.c.i
+
+CMakeFiles/main.dir/scope/stack.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/main.dir/scope/stack.c.s"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "/home/goat/Desktop/custom compiler/scope/stack.c" -o CMakeFiles/main.dir/scope/stack.c.s
+
+CMakeFiles/main.dir/symbol_table/hashmap.c.o: CMakeFiles/main.dir/flags.make
+CMakeFiles/main.dir/symbol_table/hashmap.c.o: /home/goat/Desktop/custom\ compiler/symbol\ table/hashmap.c
+CMakeFiles/main.dir/symbol_table/hashmap.c.o: CMakeFiles/main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/main.dir/symbol_table/hashmap.c.o"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/symbol_table/hashmap.c.o -MF CMakeFiles/main.dir/symbol_table/hashmap.c.o.d -o CMakeFiles/main.dir/symbol_table/hashmap.c.o -c "/home/goat/Desktop/custom compiler/symbol table/hashmap.c"
+
+CMakeFiles/main.dir/symbol_table/hashmap.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/main.dir/symbol_table/hashmap.c.i"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E "/home/goat/Desktop/custom compiler/symbol table/hashmap.c" > CMakeFiles/main.dir/symbol_table/hashmap.c.i
+
+CMakeFiles/main.dir/symbol_table/hashmap.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/main.dir/symbol_table/hashmap.c.s"
+	/usr/bin/clang-18 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S "/home/goat/Desktop/custom compiler/symbol table/hashmap.c" -o CMakeFiles/main.dir/symbol_table/hashmap.c.s
 
 # Object files for target main
 main_OBJECTS = \
-"CMakeFiles/main.dir/main.c.o"
+"CMakeFiles/main.dir/main.c.o" \
+"CMakeFiles/main.dir/parser/parser.c.o" \
+"CMakeFiles/main.dir/lexer/lexer.c.o" \
+"CMakeFiles/main.dir/scope/stack.c.o" \
+"CMakeFiles/main.dir/symbol_table/hashmap.c.o"
 
 # External object files for target main
 main_EXTERNAL_OBJECTS =
 
 main: CMakeFiles/main.dir/main.c.o
+main: CMakeFiles/main.dir/parser/parser.c.o
+main: CMakeFiles/main.dir/lexer/lexer.c.o
+main: CMakeFiles/main.dir/scope/stack.c.o
+main: CMakeFiles/main.dir/symbol_table/hashmap.c.o
 main: CMakeFiles/main.dir/build.make
 main: CMakeFiles/main.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="/home/goat/Desktop/custom compiler/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Linking C executable main"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

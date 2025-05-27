@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/goat/Desktop/custom compiler/build",
+  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/main.c.o -c \"/home/goat/Desktop/custom compiler/main.c\"",
+  "file": "/home/goat/Desktop/custom compiler/main.c",
+  "output": "CMakeFiles/main.dir/main.c.o"
+},
+{
+  "directory": "/home/goat/Desktop/custom compiler/build",
+  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/parser/parser.c.o -c \"/home/goat/Desktop/custom compiler/parser/parser.c\"",
+  "file": "/home/goat/Desktop/custom compiler/parser/parser.c",
+  "output": "CMakeFiles/main.dir/parser/parser.c.o"
+},
+{
+  "directory": "/home/goat/Desktop/custom compiler/build",
+  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/lexer/lexer.c.o -c \"/home/goat/Desktop/custom compiler/lexer/lexer.c\"",
+  "file": "/home/goat/Desktop/custom compiler/lexer/lexer.c",
+  "output": "CMakeFiles/main.dir/lexer/lexer.c.o"
+},
+{
+  "directory": "/home/goat/Desktop/custom compiler/build",
+  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/scope/stack.c.o -c \"/home/goat/Desktop/custom compiler/scope/stack.c\"",
+  "file": "/home/goat/Desktop/custom compiler/scope/stack.c",
+  "output": "CMakeFiles/main.dir/scope/stack.c.o"
+},
+{
+  "directory": "/home/goat/Desktop/custom compiler/build",
+  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/symbol_table/hashmap.c.o -c \"/home/goat/Desktop/custom compiler/symbol table/hashmap.c\"",
+  "file": "/home/goat/Desktop/custom compiler/symbol table/hashmap.c",
+  "output": "CMakeFiles/main.dir/symbol_table/hashmap.c.o"
+}
+]

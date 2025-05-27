@@ -1,1 +1,1 @@
-/usr/bin/cc -g CMakeFiles/main.dir/main.c.o -o main
+/usr/bin/clang-18 -g CMakeFiles/main.dir/main.c.o CMakeFiles/main.dir/parser/parser.c.o CMakeFiles/main.dir/lexer/lexer.c.o CMakeFiles/main.dir/scope/stack.c.o CMakeFiles/main.dir/symbol_table/hashmap.c.o -o main

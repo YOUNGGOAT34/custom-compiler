@@ -1,30 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
-
-typedef enum {
-  BEGINNING,
-  INT,
-  KEYWORD,
-  SEPARATOR,
-  OPERATOR,
-  IDENTIFIER,
-  STRING,
-  UNKNOWN,
-  END_OF_TOKENS,
-} TokenType;
-
-typedef struct {
-  TokenType type;
-  char *value;
-  size_t line_num;
-} Token;
+#include "lexer.h"
 
 
 size_t line_num=1;
-
 
 Token *generate_keyword_identifier(char *current,int *current_index){
       Token *token=(Token *)malloc(sizeof(Token));

@@ -55,6 +55,12 @@ end_if0:
 	push rax
 	mov rax,[x]
 	push rax
-	mov rdi,[x]
+	mov rax,[y]
+	push rax
+	pop rdi
+	pop rax
+	add rax,rdi
+	push rax
+	pop rdi
 	mov rax, 60
 	syscall

@@ -56,6 +56,8 @@ void while_statement(Node *root,FILE *file){
 }
 
 
+
+
 //if statement code generation
 void if_statement(Node *root,FILE *file){
    char end_label[64],else_label[64];
@@ -226,8 +228,8 @@ void traverse(Node *root, FILE *file) {
           //so basically pop the last two values pushed on the, and appy this operator on them 
           //and then finally push this result back to the stack
           // popping twice since we know if we have an operator then there must be a left value and a right value
-          fprintf(file,"\tpop rdi\n");
-          fprintf(file,"\tpop rax\n");
+           fprintf(file,"\tpop rdi\n");
+           fprintf(file,"\tpop rax\n");
     
           if(strcmp(root->value,"+")==0) fprintf(file,"\tadd rax,rdi\n");
     
@@ -252,20 +254,28 @@ void traverse(Node *root, FILE *file) {
           If the return value is an integer then we move it to rdi
           If the return value is an identifier ,then we move the value at that memory location into rdi i.e mov rdi,[identifer]
           */
-          if(root->left->type==INT){
-             fprintf(file,"\tmov rdi,%s\n",root->left->value);
-             fprintf(file, "\tmov rax, 60\n"); 
-             fprintf(file, "\tsyscall\n");
-          }
-          if(root->left->type==IDENTIFIER){
-            fprintf(file,"\tmov rdi,[%s]\n",root->left->value);
-            fprintf(file, "\tmov rax, 60\n"); 
-            fprintf(file, "\tsyscall\n");
-         }
+
+          fprintf(file,"\tpop rdi\n");
+          fprintf(file, "\tmov rax, 60\n"); 
+          fprintf(file, "\tsyscall\n");
+
+         //  if(root->left->type==INT){
+         //     fprintf(file,"\tmov rdi,%s\n",root->left->value);
+         //     fprintf(file, "\tmov rax, 60\n"); 
+         //     fprintf(file, "\tsyscall\n");
+         //  }
+         //  if(root->left->type==IDENTIFIER){
+         //    fprintf(file,"\tmov rdi,[%s]\n",root->left->value);
+         //    fprintf(file, "\tmov rax, 60\n"); 
+         //    fprintf(file, "\tsyscall\n");
+         // }
        }else if(strcmp(root->value,"return")==0){
             /*If it is return of another function then we wanna mov into rax the return value then return ,
             so now we call a function from somewhere we know the return value is in rax
            */
+
+          
+
            if(root->left->type==INT){
             fprintf(file,"\tmov rdi,%s\n",root->left->value);
             fprintf(file, "\tret\n"); 
@@ -313,7 +323,7 @@ void function(Node *root,FILE *file){
       
       */
       parent=root->left;
-      printf("parent: %s\n",parent->value);
+     
       fprintf(file,"%s:\n",root->left->value);
       traverse(root->left,file);
       

@@ -1,5 +1,6 @@
-CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
-  /usr/include/stdio.h \
+CMakeFiles/main.dir/lexer/lexer.c.o: \
+  /home/goat/Desktop/custom\ compiler/lexer/lexer.c \
+  /home/goat/Desktop/custom\ compiler/lexer/lexer.h /usr/include/stdio.h \
   /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
   /usr/include/features.h /usr/include/features-time64.h \
   /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -26,10 +27,7 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
   /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
   /usr/include/x86_64-linux-gnu/bits/floatn.h \
   /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
-  /usr/include/string.h \
-  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
-  /usr/include/strings.h /usr/include/stdlib.h \
+  /usr/include/stdlib.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_wchar_t.h \
   /usr/include/x86_64-linux-gnu/bits/waitflags.h \
   /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
@@ -56,19 +54,12 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
   /usr/include/x86_64-linux-gnu/bits/struct_mutex.h \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
-  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/ctype.h \
-  /home/goat/Desktop/custom\ compiler/./lexer/lexer.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /usr/include/string.h \
+  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
+  /usr/include/strings.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_ptrdiff_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_max_align_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h \
-  /home/goat/Desktop/custom\ compiler/parser/parser.h \
-  /usr/lib/llvm-18/lib/clang/18/include/stdbool.h /usr/include/assert.h \
-  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/hashmap.h \
-  /home/goat/Desktop/custom\ compiler/parser/../scope/stack.h \
-  /home/goat/Desktop/custom\ compiler/parser/../scope/../symbol\ table/hashmap.h \
-  /home/goat/Desktop/custom\ compiler/parser/../lexer/lexer.h \
-  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.h \
-  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/parser.h \
-  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.c \
-  /home/goat/Desktop/custom\ compiler/symbol\ table/hashmap.h \
-  /home/goat/Desktop/custom\ compiler/scope/stack.h
+  /usr/include/ctype.h
