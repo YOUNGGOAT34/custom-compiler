@@ -11,19 +11,19 @@
 #define GLOABALSPACE 5
 
 
- //for the symbol table
+
 
 
 typedef struct Node{
   char *value;
   TokenType type;
-   struct Node *left;
+  struct Node *left;
   struct Node *right;
 } Node;
 
 Node *create_variables(Node *current,Token **current_token_ptr);
+Node *if_statement_generation(Node *node,Token **current_token_ptr);
 Node *while_statement_generation(Node *node,Token **);
-
 Node *handle_variable_reassignment(Node *node,Token **current_token_ptr);
 
 
@@ -36,8 +36,7 @@ Node *initialize_node(char *val,TokenType type){
     node->type=type;
     node->left = NULL;
     node->right = NULL;
-    
-    
+
     return node;
 }
 
@@ -124,6 +123,8 @@ Node *create_function(Node *node,Token **current_token_ptr){
             node=handle_variable_reassignment(node,&token);
           }else if(strcmp(token->value,"while")==0){
             node=while_statement_generation(node,&token);
+          }else if(strcmp(token->value,"if")==0){
+            node=if_statement_generation(node,&token);
           }
         }
 
@@ -160,7 +161,7 @@ Node *create_function(Node *node,Token **current_token_ptr){
         //close curly
         if(strcmp(token->value,"}")==0){
          Node *close_curly_node=initialize_node(token->value,token->type);
-         close_parens_node->right=close_curly_node;
+         return_type_node->right=close_curly_node;
          node=close_curly_node;
         }else{
           missing_token_error("}",*(token-1));
@@ -595,6 +596,10 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                         
                         node=create_variables(node,&token);
                        
+                      }else if(strcmp(token->value,"while")==0){
+                         node=while_statement_generation(node,&token);
+                      }else if(strcmp(token->value,"if")==0){
+                         node=if_statement_generation(node,&token);
                       }
 
                       // if the tokens come to an end without getting out of this loop then we had no } ,,throw an error.
@@ -723,6 +728,10 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                         
                         node=create_variables(node,&token);
                        
+                      }else if(strcmp(token->value,"while")==0){
+                        node=while_statement_generation(node,&token);
+                      }else if(strcmp(token->value,"if")==0){
+                         node=if_statement_generation(node,&token);
                       }
                      }
                        
@@ -732,7 +741,7 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                 
                          Node *close_curly_node=initialize_node(token->value,token->type);
                          close_parens_node->right=close_curly_node;
-                         
+                         node=close_curly_node;
                          
                          token++;
                          if(strcmp(token->value,"else")==0 && token->type==KEYWORD){
@@ -758,11 +767,14 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                                 }
                                  node=handle_variable_reassignment(node,&token);
                                   
-                              }
-                              if(strcmp(token->value,"int")==0){
+                              }else if(strcmp(token->value,"int")==0){
                                  
                                 node=create_variables(node,&token);
                                 
+                              }else if(strcmp(token->value,"while")==0){
+                                 node=while_statement_generation(node,&token);
+                              }else if(strcmp(token->value,"if")==0){
+                                 node=if_statement_generation(node,&token);
                               }
                              
                             }
@@ -918,5 +930,6 @@ void free_nodes(Node *node){
    free_nodes(node->left);
    free_nodes(node->right);
    free(node->value);
+  //  free(node->type);
    free(node);
 }
