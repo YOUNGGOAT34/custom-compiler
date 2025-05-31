@@ -2,8 +2,11 @@
 #define CODE_GENERATOR_H_
 
 #include<stdio.h>
+
+#include<stdlib.h>
 #include "../parser/parser.h"
-#include "code_generator.c"
+#include "../symbol table/hashmap.h"
+#include "../scope/stack.h"
 
 void traverse(Node *root, FILE *file);
 void generate_data_section(Node *root,FILE *file);

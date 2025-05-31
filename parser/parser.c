@@ -8,6 +8,16 @@
 
 //The table will be global to track functions
 FunctionTable *function_table;
+
+//A helper function to calculte the size of data types i.e int=4,char=1,double=8,float=4,,and I am gonna just have default as 4
+size_t size_of_type(const char *type) {
+  if (strcmp(type, "int") == 0) return 8;
+  else if (strcmp(type, "char") == 0) return 1;
+  else if (strcmp(type, "float") == 0) return 4;
+  else if (strcmp(type, "double") == 0) return 8;
+ 
+  return 4; 
+}
 //Initialize node
 
 Node *initialize_node(char *val,TokenType type){
@@ -77,20 +87,69 @@ Node *create_function(Node *node,Token **current_token_ptr){
 
   
   */
-  Token *token=*current_token_ptr;
-  Node *return_type_node=initialize_node(token->value,token->type);
-  char *return_type=token->value;
-  Param *params;
-  node->left=return_type_node;
-  token++;
-  //Identifier node
-  Node *identifier_node=initialize_node(token->value,token->type);
-  char *name=token->value;
-  return_type_node->left=identifier_node;
-  token++;
-  Node *open_parens_node=initialize_node(token->value,token->type);
-  identifier_node->left=open_parens_node;
-  token++;
+      Token *token=*current_token_ptr;
+      Node *return_type_node=initialize_node(token->value,token->type);
+      char *return_type=token->value;
+      Param *params=NULL;
+      node->left=return_type_node;
+      token++;
+      //Identifier node
+      Node *identifier_node=initialize_node(token->value,token->type);
+      char *name=token->value;
+      size_t line_number=token->line_num;
+      if (get_function(function_table, name) != NULL) {
+        fprintf(stderr, "\033[1;31mError:\033[0m Redefinition of function '%s' at line %zu ,'%s' was initially defined on line %zu\n", name, token->line_num,name,get_function(function_table,name)->line_number);
+        exit(1);  // or handle gracefully
+    }
+      return_type_node->left=identifier_node;
+      token++;
+      Node *open_parens_node=initialize_node(token->value,token->type);
+      identifier_node->left=open_parens_node;
+      token++;
+      //Parameters
+      int params_capacity=4;
+      int param_count=0;
+      params=malloc(sizeof(Param)*params_capacity);
+   while(strcmp(token->value,")")!=0){
+     if(param_count>=params_capacity){
+       
+       params_capacity *=2;
+       params=realloc(params,sizeof(Param)*param_count);
+     }
+      //parameter type
+     if(strcmp(token->value,"int")==0){
+        Param p;
+        p.type=token->value;
+        token++;
+        //paramer identifeir
+        if(token->type==IDENTIFIER){
+           p.name=token->value;
+           token++;
+            //This is a coma
+            /*
+             A parameter is fully defined and it can be added to parameter list of this function
+            */
+           params[param_count++]=p;
+          
+           if(strcmp(token->value,",")==0){
+            token++;
+           }else if(strcmp(token->value,")")!=0){
+            fprintf(stderr, "\033[1;31mError:\033[0m Expected a , on line %zu\n",token->line_num);
+            exit(1);
+           }
+        }else{
+          fprintf(stderr, "\033[1;31mError:\033[0m Expected parameter identifier after return type on line %zu\n",token->line_num);
+          exit(1);
+        }
+        
+     }else{
+      fprintf(stderr, "\033[1;31mError:\033[0m Expected parameter return type on line %zu\n",token->line_num);
+      exit(1);
+     }
+    
+     
+     
+   }
  //close parenthesis node
  if(strcmp(token->value,")")==0){
     
@@ -102,8 +161,10 @@ Node *create_function(Node *node,Token **current_token_ptr){
      }
      //This is supposed to be open curly braces
      if(strcmp(token->value,"{")==0){
-        Table *new_table=create_table();
-        push_scope(new_table);
+        Table *scope_table=create_table();
+        Table *codegen_table=create_table();
+        push_scope(&scope_stack,scope_table);
+        push_scope(&code_gen_stack,codegen_table);
         Node *open_curly_node=initialize_node(token->value,token->type);
         open_parens_node->left=open_curly_node;
         node=open_curly_node;
@@ -131,7 +192,9 @@ Node *create_function(Node *node,Token **current_token_ptr){
            It might be an expression therefore we need to parse this as a normal expression.
           */
           if(token->type==IDENTIFIER || token->type==INT){
+            
             Node *return_value_node=parse_expression(&token);
+            
             return_statement->left=return_value_node;
             
             //semi colon
@@ -164,16 +227,16 @@ Node *create_function(Node *node,Token **current_token_ptr){
      }else{
         missing_token_error("{",*(token-1));
      }
-     
+    
 
-     insert_function(function_table,name,return_type,params,0,token->line_num);
+     insert_function(function_table,name,return_type,params,param_count,line_number);
+    //  pop_scope(&scope_stack);
  }
 
 
  
  *current_token_ptr=token;
- 
- pop_scope();
+ pop_scope(&scope_stack);
  return node;
 }
 
@@ -185,11 +248,11 @@ Node *parse_primary(Token **current_token_ptr){
      if(token->type==IDENTIFIER){
         //get the current scope, then get the variable
         
-        Variable *variable=search_variable(token->value);
+        Variable *variable=search_variable(&scope_stack,token->value);
        
         if(variable==NULL){
-          printf("%s\n",token->value);
-          fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): '%s' is not \n", token->line_num,token->value);
+        
+          fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): '%s' is not defined \n", token->line_num,token->value);
           exit(1);
         };
      }
@@ -259,7 +322,7 @@ Node *parse_expression(Token **current_token_ptr) {
 
 //function to check if a variableis defined before using it
 bool check_variable(char *name){
-   Variable *var=search_variable(name);;
+   Variable *var=search_variable(&scope_stack,name);;
    if(var==NULL) return false;
 
    return true;
@@ -348,11 +411,10 @@ Node *create_variables(Node *current,Token **current_token_ptr){
   
     Token *token=*current_token_ptr;
    
-    //allocate memory for the variable
-    Variable *variable=malloc(sizeof(Variable));
+    
     Node *var_node=initialize_node(token->value,token->type);
     //variable type i.e int,char ,float etc....
-    variable->type=token->value;
+    char *type=token->value;
    
     current->left=var_node;
     token++;
@@ -374,8 +436,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
         return create_function(current,current_token_ptr);
       }
 
-     
-     
+    
      Node *operator_node=initialize_node(token->value,token->type);
 
       if (token->type==OPERATOR){
@@ -386,21 +447,18 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        }
 
        Node *identifier_node=initialize_node(token->value,token->type);
-      
-       //check if the variable has been already defined
-        Variable *existing = search_variable(token->value);
-        if (existing != NULL) {
-            variable_redefination(existing); // handle the redeclaration error
-        }
-        
+       char *identifier_name=token->value;
        
-       //name of the variable(identifier)
-       variable->name = strdup(token->value);
-      
        //insert the variable into the symbol table.
+       if (hashmap_get(current_scope(&scope_stack)->map, identifier_name) != NULL ||
+         hashmap_get(current_scope(&code_gen_stack)->map, identifier_name) != NULL) {
       
+        fprintf(stderr, "Error: variable '%s' already declared\n", identifier_name);
+          exit(1);  \
+      }
        
-       hashmap_insert(current_scope()->map, variable->name, variable);
+       table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
+       table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
       
        operator_node->left=identifier_node;
      
@@ -437,7 +495,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     var_node->right=semi_colon_node;
     
     token++;
-   
+    
   }else{
     missing_token_error(";",*(token-1));
   }
@@ -513,6 +571,11 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
 }
 
 //handle while statements
+/*
+  In nested scopes ,I don't want to push or pop from the code generation scope ,,cause really what we need is 
+  to know the function offset size so that we can know how many bytes to allocate on the stack
+  for the variables defined in there ,,but for the parsing stack ,I have to parse and pop from nested scopes
+*/
 Node *while_statement_generation(Node *node,Token **current_token_ptr){
    Token *token=*current_token_ptr;
    Node *while_statement_node=initialize_node(token->value,token->type);
@@ -572,8 +635,10 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                     end_of_tokens_error(token->line_num);
                   }
                   if(strcmp(token->value,"{")==0){
-                     Table *new_scope=create_table();
-                     push_scope(new_scope);
+                    Table *scope_table=create_table();
+                  
+                     push_scope(&scope_stack,scope_table);
+                     
                      Node *open_curly_node=initialize_node(token->value,token->type);
                      close_parens_node->left=open_curly_node;
                      node=open_curly_node;
@@ -612,7 +677,7 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                          Node *close_curly_node=initialize_node(token->value,token->type);
                          close_parens_node->right=close_curly_node;
                          node=close_curly_node;
-                         pop_scope();
+                         pop_scope(&scope_stack);
                          
                          token++;
                       }
@@ -704,8 +769,11 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                     end_of_tokens_error(token->line_num);
                   }
                   if(strcmp(token->value,"{")==0){
-                     Table *new_scope=create_table();
-                     push_scope(new_scope);
+                    //only push to parsing scope stack ,for reasons mentioned earlie
+                    Table *scope_table=create_table();
+            
+                     push_scope(&scope_stack,scope_table);
+                     
                      Node *open_curly_node=initialize_node(token->value,token->type);
                      close_parens_node->left=open_curly_node;
                      node=open_curly_node;
@@ -735,8 +803,7 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                        
                       
                       if(strcmp(token->value,"}")==0){
-                        pop_scope();
-                
+                        pop_scope(&scope_stack);
                          Node *close_curly_node=initialize_node(token->value,token->type);
                          close_parens_node->right=close_curly_node;
                          node=close_curly_node;
@@ -748,8 +815,8 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                             token++;
                             //This is open curly '{'
                            
-                            Table *new_scope=create_table();
-                            push_scope(new_scope);
+                            Table *scope_table=create_table();
+                            push_scope(&scope_stack,scope_table);
                             Node *open_curly_node=initialize_node(token->value,token->type);
                             else_node->left=open_curly_node;
                             node=open_curly_node;
@@ -777,7 +844,7 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                              
                             }
                             //we have reached the closing curly brace,,end of scope
-                            pop_scope();
+                            pop_scope(&scope_stack);
                             Node *close_curly_node=initialize_node(token->value,token->type);
                             else_node->right=close_curly_node;
                             node=close_curly_node;
@@ -814,7 +881,9 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
 
 // function to parse tokens and create AST
 Node *parser(Token *tokens) {
-   
+        //Initialize the two stacks
+    init_scope_stack(&scope_stack);
+    init_scope_stack(&code_gen_stack);
     Token *current_token=&tokens[0];
 
     Node *current=malloc(sizeof(Node));
@@ -825,10 +894,18 @@ Node *parser(Token *tokens) {
     //for functions
     function_table=create_function_table();
     //initialize a symbol table for the global scope
-    Table *global_table=create_table();
-     //Initial I need to have this scope pushed onto the stack
-      // Push the global scope initially
-      push_scope(global_table);
+   
+       /*
+         The table should be stored in both parsing scope ,and code generation scope
+         The scopes are literally similar ,the difference is ,the parsing scope will be used for parsing
+         and the code generation scope will be used in code generation
+         Since I cannot have one table pointed to by the two scopes(in this case a change in one table affects the other )
+         I will have two tables ,in different memory locations
+       */
+      Table *global_scope_table=create_table();
+      Table *global_codegen_table=create_table();
+      push_scope(&scope_stack,global_scope_table);
+      push_scope(&code_gen_stack,global_codegen_table);
       current=root;
     
     while(strcmp(current_token->value,"EOF")){

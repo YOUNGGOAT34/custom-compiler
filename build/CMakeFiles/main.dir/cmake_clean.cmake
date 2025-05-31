@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/main.dir/code_generator/code_generator.c.o"
+  "CMakeFiles/main.dir/code_generator/code_generator.c.o.d"
   "CMakeFiles/main.dir/lexer/lexer.c.o"
   "CMakeFiles/main.dir/lexer/lexer.c.o.d"
   "CMakeFiles/main.dir/main.c.o"

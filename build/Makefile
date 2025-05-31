@@ -129,6 +129,30 @@ main/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
+code_generator/code_generator.o: code_generator/code_generator.c.o
+.PHONY : code_generator/code_generator.o
+
+# target to build an object file
+code_generator/code_generator.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/code_generator/code_generator.c.o
+.PHONY : code_generator/code_generator.c.o
+
+code_generator/code_generator.i: code_generator/code_generator.c.i
+.PHONY : code_generator/code_generator.i
+
+# target to preprocess a source file
+code_generator/code_generator.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/code_generator/code_generator.c.i
+.PHONY : code_generator/code_generator.c.i
+
+code_generator/code_generator.s: code_generator/code_generator.c.s
+.PHONY : code_generator/code_generator.s
+
+# target to generate assembly for a file
+code_generator/code_generator.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/code_generator/code_generator.c.s
+.PHONY : code_generator/code_generator.c.s
+
 lexer/lexer.o: lexer/lexer.c.o
 .PHONY : lexer/lexer.o
 
@@ -258,6 +282,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... main"
+	@echo "... code_generator/code_generator.o"
+	@echo "... code_generator/code_generator.i"
+	@echo "... code_generator/code_generator.s"
 	@echo "... lexer/lexer.o"
 	@echo "... lexer/lexer.i"
 	@echo "... lexer/lexer.s"

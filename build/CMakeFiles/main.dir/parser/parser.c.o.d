@@ -65,7 +65,8 @@ CMakeFiles/main.dir/parser/parser.c.o: \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_ptrdiff_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_max_align_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h \
+  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/../scope/stack.h \
+  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/../scope/../symbol\ table/hashmap.h \
   /home/goat/Desktop/custom\ compiler/parser/../scope/stack.h \
-  /home/goat/Desktop/custom\ compiler/parser/../scope/../symbol\ table/hashmap.h \
   /home/goat/Desktop/custom\ compiler/parser/../lexer/lexer.h \
   /usr/include/ctype.h

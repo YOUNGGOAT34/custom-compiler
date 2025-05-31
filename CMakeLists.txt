@@ -7,4 +7,4 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-add_executable(main main.c ./parser/parser.c ./lexer/lexer.c ./scope/stack.c  "./symbol table/hashmap.c")
+add_executable(main main.c ./parser/parser.c ./lexer/lexer.c ./scope/stack.c  "./symbol table/hashmap.c" "./code generator/code_generator.c")

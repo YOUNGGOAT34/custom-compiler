@@ -28,5 +28,11 @@
   "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/symbol_table/hashmap.c.o -c \"/home/goat/Desktop/custom compiler/symbol table/hashmap.c\"",
   "file": "/home/goat/Desktop/custom compiler/symbol table/hashmap.c",
   "output": "CMakeFiles/main.dir/symbol_table/hashmap.c.o"
+},
+{
+  "directory": "/home/goat/Desktop/custom compiler/build",
+  "command": "/usr/bin/clang-18   -g -o CMakeFiles/main.dir/code_generator/code_generator.c.o -c \"/home/goat/Desktop/custom compiler/code generator/code_generator.c\"",
+  "file": "/home/goat/Desktop/custom compiler/code generator/code_generator.c",
+  "output": "CMakeFiles/main.dir/code_generator/code_generator.c.o"
 }
 ]

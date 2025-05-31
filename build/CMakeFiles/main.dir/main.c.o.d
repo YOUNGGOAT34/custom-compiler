@@ -64,11 +64,13 @@ CMakeFiles/main.dir/main.c.o: /home/goat/Desktop/custom\ compiler/main.c \
   /home/goat/Desktop/custom\ compiler/parser/parser.h \
   /usr/lib/llvm-18/lib/clang/18/include/stdbool.h /usr/include/assert.h \
   /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/hashmap.h \
+  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/../scope/stack.h \
+  /home/goat/Desktop/custom\ compiler/parser/../symbol\ table/../scope/../symbol\ table/hashmap.h \
   /home/goat/Desktop/custom\ compiler/parser/../scope/stack.h \
-  /home/goat/Desktop/custom\ compiler/parser/../scope/../symbol\ table/hashmap.h \
   /home/goat/Desktop/custom\ compiler/parser/../lexer/lexer.h \
   /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.h \
   /home/goat/Desktop/custom\ compiler/code\ generator/../parser/parser.h \
-  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.c \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../symbol\ table/hashmap.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../scope/stack.h \
   /home/goat/Desktop/custom\ compiler/symbol\ table/hashmap.h \
   /home/goat/Desktop/custom\ compiler/scope/stack.h

@@ -25,15 +25,16 @@ int main(void){
   //  print_tokens(tokens);
    Node *root= parser(tokens);
    
-  //  code_generator(root);
+   code_generator(root);
 
-  //  system("nasm -f elf64 ../generated.asm -o generated.o");
-  //  system("ld generated.o -o generated");
- 
   
+
+   system("nasm -f elf64 ../generated.asm -o generated.o");
+   system("ld generated.o -o generated");
+ 
   // // print_table();
 
-  // return WEXITSTATUS(system("./generated"));
+  return WEXITSTATUS(system("./generated"));
   // return 0;
 
 

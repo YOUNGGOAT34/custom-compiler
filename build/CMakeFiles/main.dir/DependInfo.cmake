@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/goat/Desktop/custom compiler/code generator/code_generator.c" "CMakeFiles/main.dir/code_generator/code_generator.c.o" "gcc" "CMakeFiles/main.dir/code_generator/code_generator.c.o.d"
   "/home/goat/Desktop/custom compiler/lexer/lexer.c" "CMakeFiles/main.dir/lexer/lexer.c.o" "gcc" "CMakeFiles/main.dir/lexer/lexer.c.o.d"
   "/home/goat/Desktop/custom compiler/main.c" "CMakeFiles/main.dir/main.c.o" "gcc" "CMakeFiles/main.dir/main.c.o.d"
   "/home/goat/Desktop/custom compiler/parser/parser.c" "CMakeFiles/main.dir/parser/parser.c.o" "gcc" "CMakeFiles/main.dir/parser/parser.c.o.d"

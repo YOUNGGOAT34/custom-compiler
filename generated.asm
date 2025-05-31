@@ -1,61 +1,88 @@
 section .data
-	x dq 0
-	y dq 0
 section .text
 	global _start
 _start:
 	jmp main
 main:
-	mov rax,[x]
+	push rbp
+	mov rbp, rsp
+	sub rsp, 40
+	mov rax,[rbp-0]
 	push rax
-	mov rax,4
+	mov rax,10
 	push rax
 	pop rbx
-	mov [x],rbx
+	mov QWORD[rbp-0],rbx
 	pop rdi
 	pop rax
 	push rax
-	mov rax, [x]
-	mov rbx, 4
-	cmp rax,rbx
-	je _else0
-	jmp end_if0
-_else0:
+	mov rax,[rbp-8]
+	push rax
+	mov rax,20
+	push rax
+	pop rbx
+	mov QWORD[rbp-8],rbx
+	pop rdi
+	pop rax
+	push rax
 while0:
-	mov rax, [x]
+	mov rax, [rbp-0]
 	mov rbx, 10
 	cmp rax,rbx
 	je end_while0
-	mov rax,[x]
-	push rax
-	mov rax,[x]
+	mov rax,[rbp-16]
 	push rax
 	mov rax,1
+	push rax
+	pop rbx
+	mov QWORD[rbp-16],rbx
+	pop rdi
+	pop rax
+	push rax
+	mov rax,[rbp-24]
+	push rax
+	mov rax,1
+	push rax
+	pop rbx
+	mov QWORD[rbp-24],rbx
+	pop rdi
+	pop rax
+	push rax
+	mov rax,[rbp-0]
+	push rax
+	mov rax,[rbp-0]
+	push rax
+	mov rax,[rbp-24]
 	push rax
 	pop rdi
 	pop rax
 	add rax,rdi
 	push rax
 	pop rbx
-	mov [x],rbx
+	mov QWORD[rbp-0],rbx
 	pop rdi
 	pop rax
 	push rax
 	jmp while0
 end_while0:
-end_if0:
-	mov rax,[y]
+	mov rax,[rbp-32]
 	push rax
-	mov rax,2
+	mov rax,5
 	push rax
 	pop rbx
-	mov [y],rbx
+	mov QWORD[rbp-32],rbx
 	pop rdi
 	pop rax
 	push rax
-	mov rax,[x]
+	mov rax,[rbp-0]
 	push rax
-	mov rax,[y]
+	mov rax,[rbp-8]
+	push rax
+	pop rdi
+	pop rax
+	add rax,rdi
+	push rax
+	mov rax,[rbp-32]
 	push rax
 	pop rdi
 	pop rax
@@ -63,4 +90,6 @@ end_if0:
 	push rax
 	pop rdi
 	mov rax, 60
+	mov rsp, rbp
+	pop rbp
 	syscall

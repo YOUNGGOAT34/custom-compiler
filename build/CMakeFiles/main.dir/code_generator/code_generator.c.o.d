@@ -1,5 +1,7 @@
-CMakeFiles/main.dir/scope/stack.c.o: \
-  /home/goat/Desktop/custom\ compiler/scope/stack.c /usr/include/stdio.h \
+CMakeFiles/main.dir/code_generator/code_generator.c.o: \
+  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.c \
+  /home/goat/Desktop/custom\ compiler/code\ generator/code_generator.h \
+  /usr/include/stdio.h \
   /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
   /usr/include/features.h /usr/include/features-time64.h \
   /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -54,13 +56,20 @@ CMakeFiles/main.dir/scope/stack.c.o: \
   /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h \
   /usr/include/alloca.h \
   /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/parser.h \
+  /usr/lib/llvm-18/lib/clang/18/include/stdbool.h /usr/include/assert.h \
   /usr/include/string.h \
   /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
   /usr/include/strings.h \
-  /home/goat/Desktop/custom\ compiler/scope/stack.h \
-  /home/goat/Desktop/custom\ compiler/scope/../symbol\ table/hashmap.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/../symbol\ table/hashmap.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_ptrdiff_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_max_align_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h \
-  /home/goat/Desktop/custom\ compiler/scope/../symbol\ table/../scope/stack.h
+  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/../symbol\ table/../scope/stack.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/../symbol\ table/../scope/../symbol\ table/hashmap.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/../scope/stack.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../parser/../lexer/lexer.h \
+  /usr/include/ctype.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../symbol\ table/hashmap.h \
+  /home/goat/Desktop/custom\ compiler/code\ generator/../scope/stack.h

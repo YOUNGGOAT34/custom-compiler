@@ -147,16 +147,16 @@ Token *lexer(FILE *file){
         
     }
 
-    // Read the file contents
+   
     fread(current, 1, length, file);
-    current[length] = '\0';         // Null-terminate the string
+    current[length] = '\0';       
 
     int number_of_tokens = 12;
     int tokens_size = 0;
     Token *tokens = malloc(sizeof(Token) * number_of_tokens);
     int tokens_index = 0;
 
-    //go through the characters stored in current
+    
     
     while (current[current_index]!='\0'){
             tokens_size++;
@@ -180,8 +180,8 @@ Token *lexer(FILE *file){
             
             Token *token = NULL;
           
-           if (strchr("=+*-></!;(){}", curr)) {
-            TokenType type = strchr(";(){}", curr) ? SEPARATOR : OPERATOR;
+           if (strchr("=+*-></!;(){},", curr)) {
+            TokenType type = strchr(";(){},", curr) ? SEPARATOR : OPERATOR;
             token = generate_separator_operator(current, &current_index, type);
              }else if(isdigit(curr)){
                token=generate_number(current,&current_index);

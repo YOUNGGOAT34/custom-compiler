@@ -25,7 +25,7 @@ void handle_exit_system(Node *current,Token **);
 Node *parse_expression(Token **);
 Node *parse_primary(Token **);
 Node *parse_multiplication(Token **);
-
+size_t size_of_type(const char *type);
 Node *create_variables(Node *current,Token **current_token_ptr);
 Node *if_statement_generation(Node *node,Token **current_token_ptr);
 Node *while_statement_generation(Node *node,Token **);

@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+
+
 #define TABLE_SIZE 50
 #define FUNCTION_TABLE_SIZE 50
 
@@ -29,7 +31,7 @@ typedef struct {
 typedef struct Function{
     char *name;
     char *return_type;
-    int line_number;
+    size_t line_number;
     Param *params;
     int param_count;
     struct Function *next;
@@ -46,10 +48,15 @@ typedef struct {
  We need a variable name
  variable type
  and the line number that it was defined.
+ aaditionally I will need the offset since I need to take care of scopes when I will be generation
+ assembly ,,this will help to identify where the variable starts and ends on the stack,,like an offset from the base pointer
 */
+
+
 typedef struct {
     char *name;
     char *type;
+    int offset;
     size_t line_number;
 } Variable;
 
@@ -65,19 +72,28 @@ typedef struct {
 
 typedef struct {
     HashMap *map;
+    int current_offset;
 } Table;
+
+
 
 //variable functions
 Table *create_table(void);
+
+void print_codegen_variables(void);
 void hashmap_insert(HashMap *map, const char *key, Variable *value);
 Variable *hashmap_get(HashMap *map, const char *key);
 void clear_hashmap(HashMap *map) ;
+void table_insert_variable(Table *table, const char *name, const char *type, size_t line_number, size_t size_of_type);
 
 
 //function functions
 void insert_function(FunctionTable *table, const char *name, const char *return_type, Param *params, int param_count, int line_number);
+Function *get_function(FunctionTable *table, const char *name);
 FunctionTable *create_function_table(void);
-void function_table_insert(Function *table, const char *key, Function *value);
-Function *function_table_get(Function *table, const char *key);
+void function_table_insert(FunctionTable *table, const char *key, Function *value);
+Function *function_table_get(FunctionTable *table, const char *key);
 void clear_function_table(FunctionTable *table);
+
+#include "../scope/stack.h"
 #endif

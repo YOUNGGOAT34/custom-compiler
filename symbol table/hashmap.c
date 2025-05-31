@@ -3,6 +3,8 @@
 #include <string.h>
 #include "hashmap.h"
 
+
+
 unsigned int hash(const char *key) {
     unsigned int hash = 0;
     while (*key) {
@@ -29,6 +31,7 @@ FunctionTable *create_function_table() {
 }
 
 void insert_function(FunctionTable *table, const char *name, const char *return_type, Param *params, int param_count, int line_number) {
+    
     unsigned int index = hash(name);
     Function *function = malloc(sizeof(Function));
     function->name = strdup(name);
@@ -94,31 +97,75 @@ Table *create_table(void) {
         exit(1);
      }
     table->map = malloc(sizeof(HashMap));
+    if (!table->map) {
+        perror("Failed to allocate hashmap");
+        free(table);
+        exit(1);
+    }
     for (int i = 0; i < TABLE_SIZE; i++) {
         table->map->buckets[i] = NULL;
     }
+
+    table->current_offset = 0;
     return table;
 }
 
 void hashmap_insert(HashMap *map, const char *key, Variable *value) {
+  
     unsigned int index = hash(key);
     Entry *new_entry = malloc(sizeof(Entry));
     new_entry->key = strdup(key);
     new_entry->value = value;
     new_entry->next = map->buckets[index];
+   
     map->buckets[index] = new_entry;
+    
+
+
+
+
+}
+
+void table_insert_variable(Table *table, const char *name, const char *type, size_t line_number, size_t size_of_type) {
+    // Check if variable already exists
+    
+    if (hashmap_get(table->map, name) != NULL) {
+        fprintf(stderr, "Error: variable '%s' already declared\n", name);
+        return;
+    }
+
+    // Allocate and initialize new variable
+    Variable *var = malloc(sizeof(Variable));
+    if (!var) {
+        perror("Failed to allocate Variable");
+        exit(1);
+    }
+   
+    var->name = strdup(name);
+    var->type = strdup(type);
+    var->line_number = line_number;
+    var->offset =table->current_offset;
+    table->current_offset += size_of_type;
+    // code_generation_table->current_offset += size_of_type;
+
+    hashmap_insert(table->map, name, var);
+    
 }
 
 
+
 Variable *hashmap_get(HashMap *map, const char *key) {
+   
     unsigned int index = hash(key);
     Entry *entry = map->buckets[index];
     while (entry != NULL) {
+         
         if (strcmp(entry->key, key) == 0) {
             return entry->value;
         }
-        entry = entry->next;
+        
     }
+    
     return NULL;
 }
 
@@ -134,4 +181,28 @@ void clear_hashmap(HashMap *map) {
         }
     }
     free(map); 
+}
+
+
+void print_codegen_variables(void) {
+    
+    if (code_gen_stack.top < 0) {
+        printf("Code generation stack is empty!\n");
+        return;
+    }
+    // reverse_codegen_stack(&code_gen_stack);
+
+    Table *top_table = code_gen_stack.tables[code_gen_stack.top];  
+    HashMap *map = top_table->map;  
+
+    printf("Variables in top code generation scope:\n");
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        Entry *entry = map->buckets[i];
+        while (entry) {
+           
+            printf("Name: %s, Type: %s, Offset: %d\n", entry->value->name, entry->value->type, entry->value->offset);
+            entry = entry->next;
+        }
+    }
 }

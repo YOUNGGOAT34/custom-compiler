@@ -1,17 +1,17 @@
+
+
 int main(){
-  int x=4;
-
-if(x!=4){
+  int x=10;
+ 
+  int y=20;
   
-}else{
   while(x!=10){
-    x=x+1;
+    int z=1;
+    int j=1;
+    x=x+j;
   }
+
+  int d=5;
+
+  return x+y+d;
 }
-
-int y=2;
-
- return x+y; 
-}
-
-

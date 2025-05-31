@@ -62,4 +62,6 @@ CMakeFiles/main.dir/symbol_table/hashmap.c.o: \
   /home/goat/Desktop/custom\ compiler/symbol\ table/hashmap.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_ptrdiff_t.h \
   /usr/lib/llvm-18/lib/clang/18/include/__stddef_max_align_t.h \
-  /usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h
+  /usr/lib/llvm-18/lib/clang/18/include/__stddef_offsetof.h \
+  /home/goat/Desktop/custom\ compiler/symbol\ table/../scope/stack.h \
+  /home/goat/Desktop/custom\ compiler/symbol\ table/../scope/../symbol\ table/hashmap.h
