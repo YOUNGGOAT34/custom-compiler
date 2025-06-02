@@ -404,6 +404,20 @@ void variable_redefination(Variable *var){
    
 }
 
+/*
+   We see // ,we ignore everything that follows until we encounter a new line
+*/
+
+void handle_comments(Token **current_token_ptr){
+    //right now the current token is //
+    Token *token=*current_token_ptr;
+    token++;
+    while(strcmp(token->value,"\n")==0){
+        ++token;
+    }
+     printf("%s\n",token->value);
+    
+}
 
 //create variables
 
@@ -450,12 +464,12 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        char *identifier_name=token->value;
        
        //insert the variable into the symbol table.
-       if (hashmap_get(current_scope(&scope_stack)->map, identifier_name) != NULL ||
-         hashmap_get(current_scope(&code_gen_stack)->map, identifier_name) != NULL) {
+       if (hashmap_get(current_scope(&scope_stack)->map, identifier_name) != NULL)
+         {
       
-        fprintf(stderr, "Error: variable '%s' already declared\n", identifier_name);
-          exit(1);  \
-      }
+        fprintf(stderr, "\033[0;31m Error\033[0m : redefination of '%s',it was initially defined on line %zu\n", identifier_name,search_variable(&scope_stack,token->value)->line_number);
+          exit(1);  
+       }
        
        table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
        table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
@@ -510,10 +524,6 @@ Node *create_variables(Node *current,Token **current_token_ptr){
 Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
     
       Token *token=*current_token_ptr;
-      // if(!check_variable(token->value)) {
-      //   perror("not defined\n");
-      //   exit(1);
-      // }
       Node *update_variable_node=initialize_node("UPDATE",token->type);
       node->left=update_variable_node;
       token++;
@@ -524,10 +534,11 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
       Node *op_node=initialize_node(token->value,token->type);
       update_variable_node->left=op_node;
       token--;
+     
       //we go back to the identifier
       if(token->type==IDENTIFIER && !check_variable(token->value)){
           
-        fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value, token->line_num);
+        fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined (line %zu)\n", token->value, token->line_num);
         exit(1);
       }
       Node *identifier_node=initialize_node(token->value,token->type);
@@ -607,7 +618,7 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
       //current token at this point should be an identfier or an integer(LHS)
       if (token->type==IDENTIFIER || token->type==INT){
           if(token->type==IDENTIFIER && !check_variable(token->value)){
-            fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value, token->line_num);
+            fprintf(stderr, "\033[1;31mError:\033[0m usage of an undefined variable, '%s' is not defined (line %zu)\n", token->value, token->line_num);
             exit(1);
           }
           Node *left_expr_node=initialize_node(token->value,token->type);
@@ -966,7 +977,9 @@ Node *parser(Token *tokens) {
            break; 
 
         case SEPARATOR:
-       
+          if(strcmp(current_token->value,"\\")==0){
+              handle_comments(&current_token);
+          }
           current_token++;
           
           break;
@@ -979,17 +992,16 @@ Node *parser(Token *tokens) {
        
            current_token++;
            break;
+        /*We just wanna skip comments ,,no parsing*/
+        case COMMENT:
+          current_token++;
+          break;
           
          default:
            break;
       }
-
-    
-   
    }
 
-
-  
    print_tree(root,5);
 
 

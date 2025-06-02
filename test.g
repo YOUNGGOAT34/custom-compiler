@@ -1,17 +1,10 @@
+/*
 
 
-int main(){
-  int x=10;
- 
-  int y=20;
-  
-  while(x!=10){
-    int z=1;
-    int j=1;
-    x=x+j;
-  }
+This is a comment
+working well
 
-  int d=5;
+*/
+int k=3;
 
-  return x+y+d;
-}
+//also this one

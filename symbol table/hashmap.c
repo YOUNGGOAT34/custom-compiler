@@ -127,14 +127,7 @@ void hashmap_insert(HashMap *map, const char *key, Variable *value) {
 }
 
 void table_insert_variable(Table *table, const char *name, const char *type, size_t line_number, size_t size_of_type) {
-    // Check if variable already exists
     
-    if (hashmap_get(table->map, name) != NULL) {
-        fprintf(stderr, "Error: variable '%s' already declared\n", name);
-        return;
-    }
-
-    // Allocate and initialize new variable
     Variable *var = malloc(sizeof(Variable));
     if (!var) {
         perror("Failed to allocate Variable");
@@ -146,7 +139,7 @@ void table_insert_variable(Table *table, const char *name, const char *type, siz
     var->line_number = line_number;
     var->offset =table->current_offset;
     table->current_offset += size_of_type;
-    // code_generation_table->current_offset += size_of_type;
+   
 
     hashmap_insert(table->map, name, var);
     

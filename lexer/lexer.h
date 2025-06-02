@@ -17,6 +17,7 @@ typedef enum {
    OPERATOR,
    IDENTIFIER,
    STRING,
+   COMMENT,
    UNKNOWN,
    END_OF_TOKENS,
  } TokenType;

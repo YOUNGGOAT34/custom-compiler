@@ -30,6 +30,7 @@ Node *create_variables(Node *current,Token **current_token_ptr);
 Node *if_statement_generation(Node *node,Token **current_token_ptr);
 Node *while_statement_generation(Node *node,Token **);
 Node *handle_variable_reassignment(Node *node,Token **current_token_ptr);
+void handle_comments(Token **current_token_ptr);
 
 
 #endif

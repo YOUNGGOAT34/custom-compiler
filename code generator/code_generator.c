@@ -367,7 +367,6 @@ void traverse(Node *root, FILE *file) {
 */
 
 
-
 void function(Node *root,FILE *file){
   
    if(!root) return;
@@ -413,15 +412,12 @@ void code_generator(Node *root){
 
   
   fprintf(file,"section .data\n");
-  
 //   generate_data_section(root,file);
-
   fprintf(file,"section .text\n");
   fprintf(file,"\tglobal _start\n");
   fprintf(file,"_start:\n");
   fprintf(file,"\tjmp main\n");
   reverse_codegen_stack(&code_gen_stack);
-
   //pop the global scope
   pop_scope(&code_gen_stack);
 //   print_codegen_variables();

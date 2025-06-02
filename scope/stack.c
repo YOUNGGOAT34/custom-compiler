@@ -32,7 +32,7 @@ void pop_scope(ScopeStack *stack) {
         printf("Scope stack underflow\n");
         exit(1);
     }
-    printf("Popping from stack: %s\n", stack == &scope_stack ? "Parsing Stack" : "CodeGen Stack");
+    // printf("Popping from stack: %s\n", stack == &scope_stack ? "Parsing Stack" : "CodeGen Stack");
 
     clear_hashmap(stack->tables[stack->top]->map);
     stack->top--;
