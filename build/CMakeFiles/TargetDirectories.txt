@@ -1,3 +1,0 @@
-/home/goat/Desktop/custom compiler/build/CMakeFiles/main.dir
-/home/goat/Desktop/custom compiler/build/CMakeFiles/edit_cache.dir
-/home/goat/Desktop/custom compiler/build/CMakeFiles/rebuild_cache.dir

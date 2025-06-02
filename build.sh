@@ -1,0 +1,2 @@
+gcc -Wall -Wextra -c  main.c  parser/parser.c lexer/lexer.c scope/stack.c "symbol table"/hashmap.c "code generator"/code_generator.c
+gcc lexer.o stack.o code_generator.o hashmap.o main.o parser.o -o main 

@@ -899,7 +899,7 @@ Node *parser(Token *tokens) {
 
     Node *current=malloc(sizeof(Node));
     
-    Node *left=malloc(sizeof(Node));
+    // Node *left=malloc(sizeof(Node));
    
     Node *root=initialize_node("START",BEGINNING);
     //for functions

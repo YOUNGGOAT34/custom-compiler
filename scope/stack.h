@@ -1,7 +1,7 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "../symbol table/hashmap.h"
+#include "../symbol_table/hashmap.h"
 
 #define MAX_STACK_SIZE 10
 

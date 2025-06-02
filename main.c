@@ -4,8 +4,8 @@
 #include<ctype.h>
 #include "./lexer/lexer.h"
 #include "parser/parser.h"
-#include "code generator/code_generator.h"
-#include "symbol table/hashmap.h"
+#include "code_generator/code_generator.h"
+#include "symbol_table/hashmap.h"
 #include "scope/stack.h"
 
 
@@ -13,8 +13,9 @@
 
 
 int main(void){
-    FILE *file=fopen("../test.g","r");
+    FILE *file=fopen("test.g","r");
      if (file == NULL) {
+        printf("Here\n");
         perror("Failed to open file");
         return 1;
     }
@@ -26,16 +27,16 @@ int main(void){
    print_tokens(tokens);
    Node *root= parser(tokens);
    
-  //  code_generator(root);
+   code_generator(root);
 
   
 
-   system("nasm -f elf64 ../generated.asm -o generated.o");
-   system("ld generated.o -o generated");
+  //  system("nasm -f elf64 ../generated.asm -o generated.o");
+  //  system("ld generated.o -o generated");
  
   // print_table();
 
-  return WEXITSTATUS(system("./generated"));
+  // return WEXITSTATUS(system("./generated"));
   // return 0;
 
 

@@ -5,7 +5,7 @@
 #include<stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include "../symbol table/hashmap.h"
+#include "../symbol_table/hashmap.h"
 #include "../scope/stack.h"
 #include "../lexer/lexer.h"
 

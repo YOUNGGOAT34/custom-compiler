@@ -1,7 +1,6 @@
 
 #include "lexer.h"
 
-
 size_t line_num=1;
 
 Token *generate_keyword_identifier(char *current,int *current_index){
@@ -325,7 +324,7 @@ Token *lexer(FILE *file){
 }
 
 void print_tokens(Token *tokens){
-     int index=0;
+  
      Token *token=tokens;
      while(token->value){
       printf("TOKEN TYPE: %s , TOKEN VALUE: %s , on line: %zu\n",token_type_to_string(token->type),token->value,token->line_num);

@@ -5,7 +5,7 @@
 
 #include<stdlib.h>
 #include "../parser/parser.h"
-#include "../symbol table/hashmap.h"
+#include "../symbol_table/hashmap.h"
 #include "../scope/stack.h"
 
 void traverse(Node *root, FILE *file);
