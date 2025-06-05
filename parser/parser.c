@@ -31,7 +31,6 @@ Node *initialize_node(char *val,TokenType type){
     return node;
 }
 
-
 //visualize the AST
 
 void print_tree(Node *root,int space){
@@ -64,6 +63,186 @@ void missing_token_error(char *token,Token prev_token){
     exit(1);
 }
 
+/*
+  do while loop,
+  
+     
+      
+          }
+
+       do 
+
+          {
+
+            code blok
+
+                                ;
+                        while
+      
+                                      )
+                                (
+                                    codintion
+
+
+
+
+  do keyword must be followed by {
+  anything that follows is counted as the code block ,unless it is a }
+
+} must be followed by while keyword
+ while must be followed by (
+ ( must be followed by a condition
+  the condition : lhs comparison operator rhs
+
+  after the codition we have )
+
+  and finally we have a :
+
+
+
+
+*/
+
+Node *do_while_loop(Node *node,Token **current_token_ptr){
+    Token *token=*current_token_ptr;
+    Node *do_node=initialize_node(token->value,token->type);
+    node->left=do_node;
+    token++;
+    if(strcmp(token->value,"EOF")==0){
+        end_of_tokens_error(token->line_num);
+    }
+    if(strcmp(token->value,"{")==0){
+       Table *scope_table=create_table();
+       push_scope(&scope_stack,scope_table);
+       Node *open_curly_node=initialize_node(token->value,token->type);
+       do_node->left=open_curly_node;
+       node=open_curly_node;
+       token++;
+       if(strcmp(token->value,"EOF")==0){
+         end_of_tokens_error(token->line_num);
+       }
+       
+        while(strcmp(token->value,"}")!=0){
+           if(strcmp(token->value,"int")==0){
+            
+             node=create_variables(node,&token);
+            
+           }else if(token->type==IDENTIFIER){
+             node=handle_variable_reassignment(node,&token);
+           }else if(strcmp(token->value,"if")==0){
+              node=if_statement_generation(node,&token);
+
+           }else if(strcmp(token->value,"while")==0){
+             node=while_statement_generation(node,&token);
+             
+           }else if(strcmp(token->value,"do")==0){
+             node=do_while_loop(node,&token);
+           }else if(strcmp(token->value,"EOF")==0){
+              end_of_tokens_error(token->line_num);
+           }
+
+        }
+        Node *close_curly_node=initialize_node(token->value,token->type);
+        do_node->right=close_curly_node;
+        node=close_curly_node;
+       
+        token++;
+        if(strcmp(token->value,"EOF")==0){
+          end_of_tokens_error(token->line_num);
+        }
+        if(strcmp(token->value,"while")==0){
+          Node *while_node=initialize_node(token->value,token->type);
+          open_curly_node->right=while_node;
+          token++;
+          if(strcmp(token->value,"EOF")==0){
+            end_of_tokens_error(token->line_num);
+          }
+          if(strcmp(token->value,"(")==0){
+             Node *open_parens_node=initialize_node(token->value,token->type);
+             while_node->left=open_parens_node;
+             token++;
+             if(strcmp(token->value,"EOF")==0){
+              end_of_tokens_error(token->line_num);
+            }
+
+             if(token->type==INT || token->type==IDENTIFIER){
+              if(token->type==IDENTIFIER){
+                if(search_variable(&scope_stack,token->value)==NULL){
+                 fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value,token->line_num);
+                 exit(1);
+                }
+               }
+                 token++;
+                 if(token->type==OPERATOR && strcmp(token->value,"=")!=0){
+                  Node *op_node=initialize_node(token->value,token->type);
+                  open_parens_node->left=op_node;
+                  token--;
+                  Node *lhs_node=initialize_node(token->value,token->type);
+                  op_node->left=lhs_node;
+                  token++;
+                  token++;
+                  if(strcmp(token->value,"EOF")==0){
+                     end_of_tokens_error(token->line_num);
+                  }
+                   if(token->type==INT || token->type==IDENTIFIER){
+                    if(token->type==IDENTIFIER){
+                       if(hashmap_get(current_scope(&scope_stack)->map,token->value)==NULL){
+                        fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value,token->line_num);
+                        exit(1);
+                       }
+                    }
+                    Node *rhs_node=initialize_node(token->value,token->type);
+                    op_node->right=rhs_node;
+                    token++;
+                    if(strcmp(token->value,"EOF")==0){
+                       end_of_tokens_error(token->line_num);
+                    }
+                    if(strcmp(token->value,")")==0){
+                      Node *close_parens_node=initialize_node(token->value,token->type);
+                      open_parens_node->right=close_parens_node;
+                      token++;
+                      if(strcmp(token->value,"EOF")==0){
+                        end_of_tokens_error(token->line_num);
+                      }
+                      if(strcmp(token->value,";")==0){
+                         Node *semi_colon_node=initialize_node(token->value,token->type);
+                         while_node->right=semi_colon_node;
+                         token++;
+                         pop_scope(&scope_stack);
+                      }else{
+                         missing_token_error(";",*(token-1));
+                      }
+                    }else{
+                       missing_token_error(")",*(token-1));
+                    }
+                   }else{
+
+                   }
+                  
+                    
+                 }else{
+                   missing_token_error("comparison operator",*(token-1));
+                 }
+               
+                  
+             }else{
+                missing_token_error("integer literal or identifier",*(token-1));
+             }
+          }else{
+             missing_token_error("(",*(token-1));
+          }
+        }else{
+          missing_token_error("while",*(token-1));
+        }
+    }else{
+       missing_token_error("{",*(token-1));
+    }
+   
+    *current_token_ptr=token;
+    return node;
+  
+}
+
 
 //Function to create functions
 /*
@@ -93,13 +272,13 @@ Node *create_function(Node *node,Token **current_token_ptr){
       Param *params=NULL;
       node->left=return_type_node;
       token++;
-      //Identifier node
+      
       Node *identifier_node=initialize_node(token->value,token->type);
       char *name=token->value;
       size_t line_number=token->line_num;
       if (get_function(function_table, name) != NULL) {
         fprintf(stderr, "\033[1;31mError:\033[0m Redefinition of function '%s' at line %zu ,'%s' was initially defined on line %zu\n", name, token->line_num,name,get_function(function_table,name)->line_number);
-        exit(1);  // or handle gracefully
+        exit(1); 
     }
       return_type_node->left=identifier_node;
       token++;
@@ -179,6 +358,8 @@ Node *create_function(Node *node,Token **current_token_ptr){
             node=while_statement_generation(node,&token);
           }else if(strcmp(token->value,"if")==0){
             node=if_statement_generation(node,&token);
+          }else if(strcmp(token->value,"do")==0){
+             node=do_while_loop(node,&token);
           }
         }
 
@@ -415,7 +596,7 @@ void handle_comments(Token **current_token_ptr){
     while(strcmp(token->value,"\n")==0){
         ++token;
     }
-     printf("%s\n",token->value);
+   
     
 }
 
@@ -439,7 +620,6 @@ Node *create_variables(Node *current,Token **current_token_ptr){
    
     if (token->type==IDENTIFIER){
        token++;
-      
        if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
       }
@@ -451,7 +631,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
       }
 
     
-     Node *operator_node=initialize_node(token->value,token->type);
+      Node *operator_node=initialize_node(token->value,token->type);
 
       if (token->type==OPERATOR){
         var_node->left=operator_node;
@@ -463,10 +643,8 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        Node *identifier_node=initialize_node(token->value,token->type);
        char *identifier_name=token->value;
        
-       //insert the variable into the symbol table.
-       if (hashmap_get(current_scope(&scope_stack)->map, identifier_name) != NULL)
-         {
       
+       if (hashmap_get(current_scope(&scope_stack)->map, identifier_name) != NULL){
         fprintf(stderr, "\033[0;31m Error\033[0m : redefination of '%s',it was initially defined on line %zu\n", identifier_name,search_variable(&scope_stack,token->value)->line_number);
           exit(1);  
        }
@@ -674,14 +852,13 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                          node=while_statement_generation(node,&token);
                       }else if(strcmp(token->value,"if")==0){
                          node=if_statement_generation(node,&token);
+                      }else  if(strcmp(token->value,"EOF")==0){
+                        end_of_tokens_error(token->line_num);
+                      }else if(strcmp(token->value,"do")==0){
+                         node=do_while_loop(node,&token);
                       }
-
-                      // if the tokens come to an end without getting out of this loop then we had no } ,,throw an error.
-
                      }
-                     if(strcmp(token->value,"EOF")==0){
-                      end_of_tokens_error(token->line_num);
-                    }
+                    
                       if(strcmp(token->value,"}")==0){
                         
                          
@@ -798,21 +975,19 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                      //at this point we are inside the block {here}
                      while(strcmp(token->value,"}")!=0){
                       if(token->type==IDENTIFIER){
-                      
                         node=handle_variable_reassignment(node,&token);
-                        
                       }else if (strcmp(token->value,"int")==0){
-                        
                         node=create_variables(node,&token);
-                       
                       }else if(strcmp(token->value,"while")==0){
                         node=while_statement_generation(node,&token);
                       }else if(strcmp(token->value,"if")==0){
                          node=if_statement_generation(node,&token);
+                      }else if(strcmp(token->value,"EOF")==0){
+                         end_of_tokens_error(token->line_num);
+                      }else if(strcmp(token->value,"do")==0){
+                          node=do_while_loop(node,&token);
                       }
                      }
-                       
-                      
                       if(strcmp(token->value,"}")==0){
                         pop_scope(&scope_stack);
                          Node *close_curly_node=initialize_node(token->value,token->type);
@@ -895,14 +1070,13 @@ Node *parser(Token *tokens) {
         //Initialize the two stacks
     init_scope_stack(&scope_stack);
     init_scope_stack(&code_gen_stack);
-    Token *current_token=&tokens[0];
-
+    Token *current_token=tokens;
+ 
     Node *current=malloc(sizeof(Node));
     
-    // Node *left=malloc(sizeof(Node));
-   
+  
     Node *root=initialize_node("START",BEGINNING);
-    //for functions
+    //keep track of functions to avoid redefination or usage of already declared functions
     function_table=create_function_table();
     //initialize a symbol table for the global scope
    
@@ -952,8 +1126,9 @@ Node *parser(Token *tokens) {
              
                Node *while_node=while_statement_generation(current,&current_token); //close curly node is what this function returns 
                current=while_node;
+           }else if(strcmp(current_token->value,"do")==0){
               
-              
+               current=do_while_loop(current,&current_token);
                
            }
          

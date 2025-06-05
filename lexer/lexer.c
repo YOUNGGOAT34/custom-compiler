@@ -21,6 +21,7 @@ Token *generate_keyword_identifier(char *current,int *current_index){
       else if(strcmp(token->value,"int")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"for")==0)  token->type=KEYWORD;
       else if(strcmp(token->value,"while")==0) token->type=KEYWORD;
+      else if(strcmp(token->value,"do")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"else")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"return")==0) token->type=KEYWORD;
       else token->type=IDENTIFIER;

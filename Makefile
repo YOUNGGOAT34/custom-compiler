@@ -13,7 +13,8 @@ all:$(BINARY)
 $(BINARY):$(OBJECTS)
 	$(CC) -o $@ $^
 %.o:%.c
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CC) $(FLAGS) -g -c $< -o $@
+	# $(CC) $(FLAGS) -c -o $@ $^
 
 clean:
 	rm -rf $(BINARY) $(OBJECTS)

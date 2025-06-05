@@ -156,9 +156,7 @@ Variable *hashmap_get(HashMap *map, const char *key) {
         if (strcmp(entry->key, key) == 0) {
             return entry->value;
         }
-        
     }
-    
     return NULL;
 }
 

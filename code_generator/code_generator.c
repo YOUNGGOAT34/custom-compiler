@@ -3,10 +3,8 @@
 
 
 static int if_label_counter=0;
-static int while_label_counter=0,while_counter=0;
-
-
-//reverse the stack from the parser
+static int while_label_counter=0;
+static int do_while_label_counter=0;
 
 //while statement code generation
 void while_statement(Node *root,FILE *file){
@@ -217,11 +215,76 @@ void if_statement(Node *root,FILE *file){
   
   
 }
+/*
+  A do while loop should execute altleast once
+  so generate the body ,then check the condition
+  to the left of the do node we have {
+  to the right of do we have }
+  to the left of { is the code block
+  and to the right of { is the while statement and the condition
+  so traverse left of the curly braces only to generate the code block
+  do not call traverse of the while statement ,cause that might end up recursing into the normal while loop ,
+  causing error or unexpected behaviour.
+*/
+void do_while(Node *root,FILE *file){
+   if(!root) return;
+    char start_loop[64],end_loop [64];
+    int label_counter=do_while_label_counter++;
+    sprintf(start_loop,"do_while%d",label_counter);
+    sprintf(end_loop,"end_do_while%d",label_counter);
+
+    Node *code_block=root->left->left;
+    Node *condition=root->left->right->left->left;
+    //lhs and rhs of the condition
+    Node *lhs=condition->left;
+    Node *rhs=condition->right;
+    fprintf(file,"%s:\n",start_loop);
+    traverse(code_block,file);
+    /*after generating the body ,we need to take care of the condition and determine whether we will continue looping or not
+    mov lhs into rax
+    mov rhs ito rbx
+    compare them
+    jump based on the comparsion result
+    */
+    if(lhs->type==IDENTIFIER){
+      Variable *var=search_variable(&code_gen_stack,lhs->value);
+      if(var){
+         fprintf(file,"\tmov rax,[rbp-%d]\n",var->offset);
+      }else{
+         perror("Undefined variable\n");
+         exit(1);
+      }
+    }
+    if(rhs->type==INT){
+       fprintf(file,"\tmov rbx,%s\n",rhs->value);
+    }
+    fprintf(file,"\tcmp rax,rbx\n");
+    if(strcmp(condition->value,"!=")==0){
+      fprintf(file,"\tje %s\n",end_loop);
+    }else if(strcmp(condition->value,"==")==0){
+      fprintf(file,"\tjne %s\n",end_loop);
+    }else if(strcmp(condition->value,"<")==0){
+      fprintf(file,"\tjge %s\n",end_loop);
+    }else if(strcmp(condition->value,"<=")==0){
+      fprintf(file,"\tjg %s\n",end_loop);
+    }else if(strcmp(condition->value,">")==0){
+     fprintf(file,"\tjle %s\n",end_loop);
+    }else if(strcmp(condition->value,"=>")==0){
+     fprintf(file,"\tjl %s\n",end_loop);
+   }else {
+    fprintf(stderr, "Unsupported operator in if condition: %s\n", condition->value);
+    exit(1);
+   }
+   fprintf(file,"\tjmp %s\n",start_loop);
+   fprintf(file,"%s:\n",end_loop);
+   //We don't wanna stop here ,traverse the rest of the subtrees
+   traverse(root->right,file);
+}
 
 void generate_data_section(Node *root,FILE *file){
    
    if(!root) return;
-   if(strcmp(root->value,"while")==0) while_counter++;
+  
    /*
    if the function encounters a variable it defines it in the data section
    It might be a function though.
@@ -257,9 +320,10 @@ void traverse(Node *root, FILE *file) {
      if_statement(root,file);
      }else if(strcmp(root->value,"while")==0){
       while_statement(root,file);
-       }else{
-
-      
+     }else if(strcmp(root->value,"do")==0){
+         
+         do_while(root,file);
+     }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
       traverse(root->right, file);
@@ -404,7 +468,7 @@ void function(Node *root,FILE *file){
 //entry point of code generation.
 void code_generator(Node *root){
    
-  FILE *file=fopen("../generated.asm","w");
+  FILE *file=fopen("generated.asm","w");
   if(file==NULL){
     printf("File cannot be opened\n");
     exit(1);
@@ -412,11 +476,16 @@ void code_generator(Node *root){
 
   
   fprintf(file,"section .data\n");
-//   generate_data_section(root,file);
+  // generate_data_section(root,file);
   fprintf(file,"section .text\n");
   fprintf(file,"\tglobal _start\n");
   fprintf(file,"_start:\n");
   fprintf(file,"\tjmp main\n");
+  /*
+    The code generation scope stack at this point is in reverse ,,
+    code generation starts from top to bottom ,so we need to reverse the stack
+    to bring the scopes in a correct order of how they will be processed
+  */
   reverse_codegen_stack(&code_gen_stack);
   //pop the global scope
   pop_scope(&code_gen_stack);
