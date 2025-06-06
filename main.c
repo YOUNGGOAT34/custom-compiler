@@ -9,9 +9,6 @@
 #include "scope/stack.h"
 
 
-
-
-
 int main(void){
     FILE *file=fopen("test.g","r");
      if (file == NULL) {
@@ -20,9 +17,7 @@ int main(void){
         return 1;
     }
 
-  
-  
-   
+
   Token *tokens=lexer(file);
   
   //  print_tokens(tokens);
@@ -30,9 +25,6 @@ int main(void){
    
    code_generator(root);
 
-
- 
- 
   
    system("nasm -f elf64 generated.asm -o generated.o");
    system("ld generated.o -o generated");
@@ -41,7 +33,6 @@ int main(void){
 
   return WEXITSTATUS(system("./generated"));
   // return 0;
-
 
 }
 

@@ -7,8 +7,6 @@
 
 #include <ctype.h>
 
-
-
 typedef enum {
    BEGINNING,
    INT,

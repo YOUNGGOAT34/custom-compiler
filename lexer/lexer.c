@@ -158,6 +158,8 @@ Token *generate_separator_operator(char *current,int *current_index,TokenType ty
      if((current[*current_index] == '=' && current[*current_index + 1] == '=') || 
         (current[*current_index] == '!' && current[*current_index + 1] == '=') || 
         (current[*current_index] == '<' && current[*current_index + 1] == '=') || 
+        (current[*current_index] == '+'   && current[*current_index+1] == '+') ||
+        (current[*current_index] == '-'   && current[*current_index+1] == '-') ||
         (current[*current_index] == '>' && current[*current_index + 1] == '=')){
         token->value[0]=current[*current_index];
         

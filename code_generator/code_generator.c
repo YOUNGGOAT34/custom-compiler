@@ -301,6 +301,20 @@ void generate_data_section(Node *root,FILE *file){
    generate_data_section(root->right,file);//recurse  right
 }
 
+void inc_statement(Node *root,FILE *file){
+   Variable *var=search_variable(&code_gen_stack,root->left->value);
+   if(var){
+      printf("%s\n",root->left->left->value);
+      if(strcmp(root->left->left->value,"++")==0){
+         fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+      }else if(strcmp(root->left->left->value,"--")==0){
+         fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+      }
+     
+   }
+
+   traverse(root->right,file);
+}
 
 Node *parent=NULL;
 Table *scope;
@@ -323,7 +337,10 @@ void traverse(Node *root, FILE *file) {
      }else if(strcmp(root->value,"do")==0){
          
          do_while(root,file);
-     }else{
+     }else if(strcmp(root->value,"INC/DEC")==0){
+       inc_statement(root,file);
+  
+   }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
       traverse(root->right, file);
@@ -366,17 +383,15 @@ void traverse(Node *root, FILE *file) {
          
           fprintf(file,"\tpush rax\n");
     
-       }else if(root->type==IDENTIFIER && strcmp(root->value,"UPDATE") && !root->left){
-         
+       }else if(root->type==IDENTIFIER && strcmp(root->value,"UPDATE")!=0 &&strcmp(root->value,"INC")!=0 && !root->left){
+           
           Variable *var=search_variable(&code_gen_stack,root->value);
-        
+          printf("Here\n");
           if(var){
           fprintf(file,"\tmov rax,[rbp-%d]\n",var->offset);
           fprintf(file,"\tpush rax\n");
           }
          
-         
-          
        }else if(strcmp(root->value,"UPDATE")==0){
           root=root->left;
        }

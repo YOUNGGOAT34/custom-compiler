@@ -352,8 +352,14 @@ Node *create_function(Node *node,Token **current_token_ptr){
           if(strcmp(token->value,"int")==0){
              node=create_variables(node,&token);
           }else if(token->type==IDENTIFIER){
-            
-            node=handle_variable_reassignment(node,&token);
+            if(strcmp((token+1)->value,"++")==0 || strcmp((token+1)->value,"--")==0){
+               
+              node=increment_decrement(node,&token);
+              
+            }else{
+              node=handle_variable_reassignment(node,&token);
+            }
+
           }else if(strcmp(token->value,"while")==0){
             node=while_statement_generation(node,&token);
           }else if(strcmp(token->value,"if")==0){
@@ -697,6 +703,39 @@ Node *create_variables(Node *current,Token **current_token_ptr){
   return var_node->right;
   
 }
+
+Node *increment_decrement(Node *node,Token **current_token_ptr){
+   Token *token=*current_token_ptr;
+   
+  /*
+  We will just call it inc node ,even if it might be decrementing operator
+  we already checked if the variable is defined in the main parser ,,no need for repetition.
+  If we are in here ,it is no doubt that we have x++, not sure about the terminating semi colon so that is the only thing that we will check for
+
+  */
+  Node *variable_node=initialize_node("INC/DEC",token->type);
+  node->left=variable_node;
+  Node *var_node=initialize_node(token->value,token->type);
+  variable_node->left=var_node;
+  token++;
+  Node *operator_node=initialize_node(token->value,token->type);
+  var_node->left=operator_node;
+  token++;
+  if(strcmp(token->value,"EOF")==0){
+    end_of_tokens_error(token->line_num);
+  }
+  if(strcmp(token->value,";")==0){
+   Node *semi_colon_node=initialize_node(token->value,token->type);
+   variable_node->right=semi_colon_node;
+   node=semi_colon_node;
+   token++;
+  }else{
+    missing_token_error(";",*(token-1));
+  }
+  *current_token_ptr=token;
+  return node;
+}
+
 
 //function to handle variable reassignment
 Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
@@ -1115,8 +1154,6 @@ Node *parser(Token *tokens) {
                Node *var_left=create_variables(current,&current_token);
                current=var_left;
                
-              
-               
            }else if (strcmp(current_token->value,"if")==0){
                //closed curly brace is what we will evaluate last and return it,,so it will be the current node
                Node *close_curly_node=if_statement_generation(current,&current_token);
@@ -1135,7 +1172,11 @@ Node *parser(Token *tokens) {
           break;
         
         case IDENTIFIER:
-           //variable updating or reassignment
+           /*
+            something like x++/--x/x--/++x we call the increment_decrement function
+            something like x=x=1 ,we call the handle_variable reassignment function
+            something like x+=1 we call the ...
+           */
            // check if the variable is declared before updating it
           
            if(current_token->type==IDENTIFIER){
@@ -1143,10 +1184,21 @@ Node *parser(Token *tokens) {
                if(!check_variable(current_token->value)){
                   fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", current_token->value, current_token->line_num);
                   exit(1);
-           }
-             
-            Node *semi_colon_node=handle_variable_reassignment(current,&current_token);
-            current=semi_colon_node;
+              }
+              if(strcmp((current_token+1)->value,"++")==0 || strcmp((current_token+1)->value,"--")==0){
+               
+                current=increment_decrement(current,&current_token);
+                
+              }else if(strcmp((current_token+1)->value,"+=")==0){
+                  //pass
+              }else{
+               
+                current=handle_variable_reassignment(current,&current_token);
+                
+              }
+              
+              
+            
           }
           
            break; 
