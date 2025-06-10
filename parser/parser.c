@@ -31,8 +31,6 @@ Node *initialize_node(char *val,TokenType type){
     return node;
 }
 
-//visualize the AST
-
 void print_tree(Node *root,int space){
     if(root==NULL) return;
     space=space+GLOABALSPACE;
@@ -62,6 +60,13 @@ void missing_token_error(char *token,Token prev_token){
     fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): Expected '%s' after '%s'  \n",prev_token.line_num,token,prev_token.value);
     exit(1);
 }
+
+/*
+  y=--x;
+  y=x--;
+  y=++x;
+  y=x++;
+*/
 
 /*
   do while loop,
@@ -97,9 +102,6 @@ void missing_token_error(char *token,Token prev_token){
   after the codition we have )
 
   and finally we have a :
-
-
-
 
 */
 
@@ -354,7 +356,7 @@ Node *create_function(Node *node,Token **current_token_ptr){
           }else if(token->type==IDENTIFIER){
             if(strcmp((token+1)->value,"++")==0 || strcmp((token+1)->value,"--")==0){
                
-              node=increment_decrement(node,&token);
+              node=postfix_prefix(node,&token);
               
             }else{
               node=handle_variable_reassignment(node,&token);
@@ -623,11 +625,24 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     if(strcmp(token->value,"EOF")==0){
        end_of_tokens_error(token->line_num);
     }
-   
+     
     if (token->type==IDENTIFIER){
        token++;
        if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
+      }
+      //  printf("%s\n",(token-1)->value);
+      if(strcmp(token->value,";")==0){
+          var_node->value="INITIALIZE";
+          Node *identifier_node=initialize_node((token-1)->value,(token-1)->type);
+          var_node->left=identifier_node;
+          table_insert_variable(current_scope(&scope_stack),(token-1)->value, type, token->line_num, size_of_type(type));
+          table_insert_variable(current_scope(&code_gen_stack),(token-1)->value, type, token->line_num, size_of_type(type));
+          Node *semi_colon_node=initialize_node(token->value,token->type);
+          var_node->right=semi_colon_node;
+          token++;
+          *current_token_ptr=token;
+          return semi_colon_node;
       }
      
       //check if it is a function
@@ -635,8 +650,11 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        
         return create_function(current,current_token_ptr);
       }
-
-    
+      /*
+        it might be something like this:
+        int a;  ==> a declaration without initialization.
+        
+      */
       Node *operator_node=initialize_node(token->value,token->type);
 
       if (token->type==OPERATOR){
@@ -681,6 +699,8 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        missing_token_error("identifier",*(token-1));
     }
    
+       
+    
 
   //next token expected should be a semi colon
 
@@ -704,7 +724,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
   
 }
 
-Node *increment_decrement(Node *node,Token **current_token_ptr){
+Node *postfix_prefix(Node *node,Token **current_token_ptr){
    Token *token=*current_token_ptr;
    
   /*
@@ -713,7 +733,7 @@ Node *increment_decrement(Node *node,Token **current_token_ptr){
   If we are in here ,it is no doubt that we have x++, not sure about the terminating semi colon so that is the only thing that we will check for
 
   */
-  Node *variable_node=initialize_node("INC/DEC",token->type);
+  Node *variable_node=initialize_node("POSTPREFIX",token->type);
   node->left=variable_node;
   Node *var_node=initialize_node(token->value,token->type);
   variable_node->left=var_node;
@@ -737,21 +757,120 @@ Node *increment_decrement(Node *node,Token **current_token_ptr){
 }
 
 
-//function to handle variable reassignment
-Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
-    
+/*
+  expressions like:
+  y=--x/y=x--
+  y++x/y=x++
+*/
+
+Node *unary_assignment(Node *node,Token **current_token_ptr){
       Token *token=*current_token_ptr;
-      Node *update_variable_node=initialize_node("UPDATE",token->type);
+      Node *update_variable_node=initialize_node("UNARYASSIGNMENT",token->type);
       node->left=update_variable_node;
       token++;
-    //At this point the current token should be an assignment operator
-    if(token->type==OPERATOR &&strcmp(token->value,"=")==0){
-      // Node *curr=handle_identifier(identifier_node,&current_token);
-      // current=curr;
+      if(strcmp(token->value,"EOF")==0){
+         end_of_tokens_error(token->line_num);
+      }
+      //At this point the current token should be an assignment operator
+      if(token->type==OPERATOR &&strcmp(token->value,"=")==0){
       Node *op_node=initialize_node(token->value,token->type);
       update_variable_node->left=op_node;
       token--;
+      //we go back to the identifier
+      if(token->type==IDENTIFIER && !check_variable(token->value)){
+        fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined (line %zu)\n", token->value, token->line_num);
+        exit(1);
+      }
+      
+      
+      Node *identifier_node=initialize_node(token->value,token->type);
+      op_node->left=identifier_node;
+      //skip twice since we have already processed the assignment operator
+      token++;
+      token++;
+      if(strcmp(token->value,"EOF")==0){
+      end_of_tokens_error(token->line_num);
+      }
+
      
+      // at this point the current token should be an identifier ,integer or an expression
+      if(token->type==IDENTIFIER){
+      
+        if(token->type==IDENTIFIER && !check_variable(token->value)){
+          fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value, token->line_num);
+          exit(1);
+        }
+            
+            Node *identfier=initialize_node(token->value,token->type);
+            op_node->right=identfier;
+            token++;
+            Node *operator=initialize_node(token->value,token->type);
+            identfier->left=operator;
+            token++;
+          
+          
+      }else if(token->type==OPERATOR){
+        Node *operator=initialize_node(token->value,token->type);
+        op_node->right=operator;
+        token++;
+        if(token->type==IDENTIFIER){
+
+          Node *identfier=initialize_node(token->value,token->type);
+          operator->left=identfier;
+          token++;
+           
+        }else{
+          missing_token_error("identifier",*(token-1));
+        }
+      }else{
+        missing_token_error("identifier, integer or an expression",*(token-1));
+      }
+      if(strcmp(token->value,"EOF")==0){
+        end_of_tokens_error(token->line_num);
+        }
+
+      //At this point we should have a semi colon to terminate this our statement.
+      if(token->type==SEPARATOR&&strcmp(token->value,";")==0){
+        Node *semi_colon_node=initialize_node(token->value,token->type);
+        update_variable_node->right=semi_colon_node;
+
+        token++;
+      }else{
+        missing_token_error(";",*(token-1));
+      }
+
+      }else{
+      missing_token_error("=",*(token-1));
+      }
+
+      *current_token_ptr=token;
+
+      return update_variable_node->right;
+}
+
+
+//function to handle variable reassignment
+Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
+   
+      Token *token=*current_token_ptr;
+      Node *update_variable_node=initialize_node("ASSIGN",token->type);
+      node->left=update_variable_node;
+      if(strcmp(token->value,"EOF")==0){
+        end_of_tokens_error(token->line_num);
+     }
+      if( ((token+3)->type==OPERATOR && strcmp((token+3)->value,"+")!=0 && strcmp((token+3)->value,"-")!=0 && strcmp((token+3)->value,"*")!=0\
+       &&strcmp((token+3)->value,"/")!=0)
+       
+      || ((token+2)->type==OPERATOR)){
+         return unary_assignment(node,current_token_ptr);
+      }
+      token++;
+    //At this point the current token should be an assignment operator
+    if(token->type==OPERATOR &&(strcmp(token->value,"=")==0||strcmp(token->value,"+=")==0 || strcmp(token->value,"-=")==0|| strcmp(token->value,"*=")==0 || strcmp(token->value,"/=")==0 )){
+      
+      Node *op_node=initialize_node(token->value,token->type);
+      update_variable_node->left=op_node;
+      token--;
       //we go back to the identifier
       if(token->type==IDENTIFIER && !check_variable(token->value)){
           
@@ -774,21 +893,26 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
           fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value, token->line_num);
           exit(1);
         }
-          op_node->right=parse_expression(&token);
+       
+         
+       op_node->right=parse_expression(&token);
+         
+          
       }else{
+        
         missing_token_error("identifier, integer or an expression",*(token-1));
       }
       //At this point we should have a semi colon to terminate this our statement.
       if(token->type==SEPARATOR&&strcmp(token->value,";")==0){
         Node *semi_colon_node=initialize_node(token->value,token->type);
         update_variable_node->right=semi_colon_node;
-
         token++;
       }else{
         missing_token_error(";",*(token-1));
       }
 
     }else{
+      
     missing_token_error("=",*(token-1));
     }
 
@@ -880,8 +1004,12 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                      //at this point we are inside the block {here}
                      while(strcmp(token->value,"}")!=0){
                       if(token->type==IDENTIFIER){
-                       
-                        node=handle_variable_reassignment(node,&token);
+                        if(strcmp((token+1)->value,"++")==0 || strcmp((token+1)->value,"--")==0){
+                           node=postfix_prefix(node,&token);
+                        }else{
+                          node=handle_variable_reassignment(node,&token);
+                        }
+                        
                         
                       }else if (strcmp(token->value,"int")==0){
                         
@@ -895,6 +1023,8 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                         end_of_tokens_error(token->line_num);
                       }else if(strcmp(token->value,"do")==0){
                          node=do_while_loop(node,&token);
+                      }else if(strcmp(token->value,"++")==0 || strcmp(token->value,"--")==0){
+                         node=postfix_prefix(node,&token);
                       }
                      }
                     
@@ -1102,8 +1232,6 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
 
 }
 
-
-
 // function to parse tokens and create AST
 Node *parser(Token *tokens) {
         //Initialize the two stacks
@@ -1148,21 +1276,18 @@ Node *parser(Token *tokens) {
                 Just let the program go to create_variables function then in there ,if the token after the identifier is '(' instead of '=' 
                 call the create_function function 
                */
-
+               current=create_variables(current,&current_token);
               
-              
-               Node *var_left=create_variables(current,&current_token);
-               current=var_left;
                
            }else if (strcmp(current_token->value,"if")==0){
                //closed curly brace is what we will evaluate last and return it,,so it will be the current node
-               Node *close_curly_node=if_statement_generation(current,&current_token);
-               current=close_curly_node;
+               current=if_statement_generation(current,&current_token);
+               
              
            }else if(strcmp(current_token->value,"while")==0){
              
-               Node *while_node=while_statement_generation(current,&current_token); //close curly node is what this function returns 
-               current=while_node;
+               current=while_statement_generation(current,&current_token); //close curly node is what this function returns 
+               
            }else if(strcmp(current_token->value,"do")==0){
               
                current=do_while_loop(current,&current_token);
@@ -1187,8 +1312,8 @@ Node *parser(Token *tokens) {
               }
               if(strcmp((current_token+1)->value,"++")==0 || strcmp((current_token+1)->value,"--")==0){
                
-                current=increment_decrement(current,&current_token);
-                
+                current=postfix_prefix(current,&current_token);
+                 
               }else if(strcmp((current_token+1)->value,"+=")==0){
                   //pass
               }else{

@@ -12,20 +12,21 @@
 int main(void){
     FILE *file=fopen("test.g","r");
      if (file == NULL) {
-        printf("Here\n");
+        
         perror("Failed to open file");
         return 1;
     }
 
 
   Token *tokens=lexer(file);
+
+  
   
   //  print_tokens(tokens);
    Node *root= parser(tokens);
    
    code_generator(root);
-
-  
+   
    system("nasm -f elf64 generated.asm -o generated.o");
    system("ld generated.o -o generated");
  

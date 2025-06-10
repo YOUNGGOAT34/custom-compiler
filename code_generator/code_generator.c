@@ -48,47 +48,47 @@ void while_statement(Node *root,FILE *file){
        perror("Not found in while loop\n");
        exit(1);
     }
-   } else{
-      fprintf(file, "\tmov rbx, %s\n", rhs->value);
-   }
-    //comparing the rhs and the lhs
-    fprintf(file,"\tcmp rax,rbx\n");
-    /*
-      If the sign  is == ,it means we execute the loop if the condition if rhs and lhs are equal
-      if they are not equal we wanna jump to the end of the loop,(jne)
-      same for other conditions 
-    */
-    if(strcmp(condition->value,"!=")==0){
-        fprintf(file,"\tje %s\n",end_loop);
-    }else if(strcmp(condition->value,"==")==0){
-        fprintf(file,"\tjne %s\n",end_loop);
-    }else if(strcmp(condition->value,"<")==0){
-        fprintf(file,"\tjge %s\n",end_loop);
-    }else if(strcmp(condition->value,"<=")==0){
-        fprintf(file,"\tjg %s\n",end_loop);
-    }else if(strcmp(condition->value,">")==0){
-       fprintf(file,"\tjle %s\n",end_loop);
-    }else if(strcmp(condition->value,"=>")==0){
-       fprintf(file,"\tjl %s\n",end_loop);
-    }else {
-      fprintf(stderr, "Unsupported operator in if condition: %s\n", condition->value);
-      exit(1);
-    }
-    
-    traverse(code_block,file);
-     
-    fprintf(file,"\tjmp %s\n",start_loop);
-    fprintf(file,"%s:\n",end_loop);
-    //after this we wanna traverse whatever follows the while loop,on its right.
-    /*
-      we had :
-        { } ,to the left of { we had the code block,,and the code that follows this while loop will be atteched to } that is why we need to traverse this part,
-          to avoid returning and leaving it ungenerated
-    */
-    traverse(root->left->right->right,file);
+      } else{
+         fprintf(file, "\tmov rbx, %s\n", rhs->value);
+      }
+      //comparing the rhs and the lhs
+      fprintf(file,"\tcmp rax,rbx\n");
+      /*
+         If the sign  is == ,it means we execute the loop if the condition if rhs and lhs are equal
+         if they are not equal we wanna jump to the end of the loop,(jne)
+         same for other conditions 
+      */
+      if(strcmp(condition->value,"!=")==0){
+         fprintf(file,"\tje %s\n",end_loop);
+      }else if(strcmp(condition->value,"==")==0){
+         fprintf(file,"\tjne %s\n",end_loop);
+      }else if(strcmp(condition->value,"<")==0){
+         fprintf(file,"\tjge %s\n",end_loop);
+      }else if(strcmp(condition->value,"<=")==0){
+         fprintf(file,"\tjg %s\n",end_loop);
+      }else if(strcmp(condition->value,">")==0){
+         fprintf(file,"\tjle %s\n",end_loop);
+      }else if(strcmp(condition->value,"=>")==0){
+         fprintf(file,"\tjl %s\n",end_loop);
+      }else {
+         fprintf(stderr, "Unsupported operator in while condition: %s\n", condition->value);
+         exit(1);
+      }
+      
+      traverse(code_block,file);
+      
+      fprintf(file,"\tjmp %s\n",start_loop);
+      fprintf(file,"%s:\n",end_loop);
+      //after this we wanna traverse whatever follows the while loop,on its right.
+      /*
+         we had :
+         { } ,to the left of { we had the code block,,and the code that follows this while loop will be atteched to } that is why we need to traverse this part,
+            to avoid returning and leaving it ungenerated
+      */
+      traverse(root->left->right->right,file);
 
-    return;
-}
+      return;
+   }
 
 //if statement code generation
 void if_statement(Node *root,FILE *file){
@@ -165,7 +165,7 @@ void if_statement(Node *root,FILE *file){
             fprintf(file, "\tjg %s\n", else_label); 
          else if (strcmp(condition->value, ">") == 0)
             fprintf(file, "\tjle %s\n", else_label); 
-         else if (strcmp(condition->value, ">=") == 0)
+         else if (strcmp(condition->value, "=>") == 0)
             fprintf(file, "\tjl %s\n", else_label);  
          else {
                fprintf(stderr, "Unsupported operator in if condition: %s\n", condition->value);
@@ -272,7 +272,7 @@ void do_while(Node *root,FILE *file){
     }else if(strcmp(condition->value,"=>")==0){
      fprintf(file,"\tjl %s\n",end_loop);
    }else {
-    fprintf(stderr, "Unsupported operator in if condition: %s\n", condition->value);
+    fprintf(stderr, "Unsupported operator in do while condition: %s\n", condition->value);
     exit(1);
    }
    fprintf(file,"\tjmp %s\n",start_loop);
@@ -280,7 +280,12 @@ void do_while(Node *root,FILE *file){
    //We don't wanna stop here ,traverse the rest of the subtrees
    traverse(root->right,file);
 }
-
+/*
+   Just for global variables ,
+   when generating code inside a function ,we search the top of the scope stack(since our scopes are just functions)
+   If not found then we know it is a global variable hence we can access it through [variable name]
+   
+*/
 void generate_data_section(Node *root,FILE *file){
    
    if(!root) return;
@@ -301,16 +306,98 @@ void generate_data_section(Node *root,FILE *file){
    generate_data_section(root->right,file);//recurse  right
 }
 
-void inc_statement(Node *root,FILE *file){
-   Variable *var=search_variable(&code_gen_stack,root->left->value);
-   if(var){
-      printf("%s\n",root->left->left->value);
-      if(strcmp(root->left->left->value,"++")==0){
-         fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
-      }else if(strcmp(root->left->left->value,"--")==0){
-         fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+/*
+  This function is gonna handle: y=++x,y=x++,y=--x,y=x--
+  y=++x: increment the value of x by 1 ,then assign it to y
+  y=x++:assign the value of x to y,then increment the value of x by 1
+
+  y=--x: decrement the value of x by 1 ,then assign it to y
+  y=x--:assign the value of x to y,then decrement the value of x by 1
+  
+  The undefined variable errors I am throwing in here are not really meant for end users,
+  they are meant for developer's debugging ,,
+  just to be safe cause ,if the variable was undefined ,the error would have be thrown during parsing.
+
+*/
+
+void handle_unary_assignment(Node *root,FILE *file){
+   if(!root) return;
+    Variable *lhs_var=search_variable(&code_gen_stack,root->left->left->value);
+    if(lhs_var){
+      if(root->left->right && root->left->right->type==IDENTIFIER){
+         Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->value);
+         if(rhs_var){
+            if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+             }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+             }
+         }else{
+            fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined in the code generation scope stack\n",root->left->right->value);
+            exit(1);
+         }
+         
+      }else if(root->left->right && root->left->right->left && root->left->right->type==OPERATOR){
+         Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->left->value);
+         if(rhs_var){
+            if(root->left->right && strcmp(root->left->right->value,"--")==0){
+               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               
+             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+             }
+         }else{
+            
+            fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined in the code generation scope stack\n",root->left->right->value);
+            exit(1);
+         }
+         
       }
-     
+    }else{
+       fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined in the code generation scope stack\n",root->left->left->value);
+       exit(1);
+    }
+    
+
+   traverse(root->right,file);
+}
+
+/*
+  
+*/
+
+void postfix_prefix_statement(Node *root,FILE *file){
+   if(root->left->type==IDENTIFIER){
+
+      Variable *var=search_variable(&code_gen_stack,root->left->value);
+      if(var){
+        
+         if(strcmp(root->left->left->value,"++")==0){
+            fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+         }else if(strcmp(root->left->left->value,"--")==0){
+            fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+         }
+         
+      }
+   }else if(root->left->type==OPERATOR){
+      Variable *var=search_variable(&code_gen_stack,root->left->left->value);
+      if(var){
+        
+         if(strcmp(root->left->value,"++")==0){
+            fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+         }else if(strcmp(root->left->value,"--")==0){
+            fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+         }
+         
+      }
    }
 
    traverse(root->right,file);
@@ -337,34 +424,87 @@ void traverse(Node *root, FILE *file) {
      }else if(strcmp(root->value,"do")==0){
          
          do_while(root,file);
-     }else if(strcmp(root->value,"INC/DEC")==0){
-       inc_statement(root,file);
+     }else if(strcmp(root->value,"POSTPREFIX")==0){
+       postfix_prefix_statement(root,file);
   
+   }else if(strcmp(root->value,"UNARYASSIGNMENT")==0){
+        handle_unary_assignment(root,file);
    }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
       traverse(root->right, file);
        
-      
        if(root->type==INT ){
          
-         fprintf(file,"\tmov rax,%s\n",root->value);
-         fprintf(file,"\tpush rax\n");
+         // fprintf(file,"\tmov rax,%s\n",root->value);
+         fprintf(file,"\tpush QWORD %s\n",root->value);
          }else if(root->type==OPERATOR){
+            //if it is an =,+=,-=,/=,*= sign then the value that is top of the stack is the computation of the left subtree.
            if(strcmp(root->value,"=")==0){
-              //if it is an equal sign then the value that is top of the stack is the computation of the left subtree.
+              
              
               Variable *var=search_variable(&code_gen_stack,root->left->value);
               if(var){
                 
-                fprintf(file,"\tpop rbx\n");
-                fprintf(file,"\tmov QWORD[rbp-%d],rbx\n",var->offset);
+              
+                fprintf(file,"\tpop QWORD[rbp-%d]\n",var->offset);
               }else{
                 printf("Not found %s\n",root->value);
                 exit(1);
               }
                
-           }
+           }else if(strcmp(root->value,"+=")==0){
+
+               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               if(var){
+               fprintf(file,"\tpop rax\n");
+               fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+               }else{
+               printf("Not found %s\n",root->value);
+               exit(1);
+               }
+              
+           }else if(strcmp(root->value,"-=")==0){
+               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               if(var){
+               fprintf(file,"\tpop rax\n");
+               fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+               }else{
+               printf("Not found %s\n",root->value);
+               exit(1);
+               }
+           }else if(strcmp(root->value,"*=")==0){
+               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               if(var){
+               fprintf(file,"\tpop rax\n");
+               fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
+               fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+               }else{
+               printf("Not found %s\n",root->value);
+               exit(1);
+               }
+           }else if(strcmp(root->value,"*=")==0){
+               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               if(var){
+               fprintf(file,"\tpop rax\n");
+               fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
+               fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+               }else{
+               printf("Not found %s\n",root->value);
+               exit(1);
+               }
+           }else if(strcmp(root->value,"/=")==0){
+               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               if(var){
+               fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+               fprintf(file,"\tpop rbx\n");
+               fprintf(file,"\tidiv rbx\n");
+               fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+               }else{
+               printf("Not found %s\n",root->value);
+               exit(1);
+               }
+        }
           
           //so basically pop the last two values pushed on the, and appy this operator on them 
           //and then finally push this result back to the stack
@@ -383,17 +523,18 @@ void traverse(Node *root, FILE *file) {
          
           fprintf(file,"\tpush rax\n");
     
-       }else if(root->type==IDENTIFIER && strcmp(root->value,"UPDATE")!=0 &&strcmp(root->value,"INC")!=0 && !root->left){
-           
-          Variable *var=search_variable(&code_gen_stack,root->value);
-          printf("Here\n");
-          if(var){
-          fprintf(file,"\tmov rax,[rbp-%d]\n",var->offset);
-          fprintf(file,"\tpush rax\n");
-          }
+       }else if(root->type==IDENTIFIER && strcmp(root->value,"ASSIGN")!=0 &&strcmp(root->value,"POSTPREFIX")!=0 && !root->left ){
          
-       }else if(strcmp(root->value,"UPDATE")==0){
-          root=root->left;
+          Variable *var=search_variable(&code_gen_stack,root->value);
+          
+          if(var){
+          fprintf(file,"\tpush QWORD [rbp-%d]\n",var->offset);
+         
+          }
+          
+         
+       }else if(strcmp(root->value,"ASSIGN")==0){
+            root=root->left;
        }
        if(strcmp(root->value,"return")==0 && parent && strcmp(parent->value,"main")==0){
           /*If the execution got into the main function's return statement it means we will exit the program with the return value as the exit code.
@@ -466,6 +607,7 @@ void function(Node *root,FILE *file){
       if(scope){
       fprintf(file, "\tpush rbp\n"); 
       fprintf(file, "\tmov rbp, rsp\n"); 
+     
       fprintf(file, "\tsub rsp, %d\n", scope->current_offset); 
      }else{
       perror("No active scope\n");
@@ -474,7 +616,7 @@ void function(Node *root,FILE *file){
       traverse(root->left,file);
       pop_scope(&code_gen_stack);
    }
-   
+    
   
    function(root->left,file);
    function(root->right,file);
@@ -489,7 +631,6 @@ void code_generator(Node *root){
     exit(1);
   }
 
-  
   fprintf(file,"section .data\n");
   // generate_data_section(root,file);
   fprintf(file,"section .text\n");
@@ -502,9 +643,7 @@ void code_generator(Node *root){
     to bring the scopes in a correct order of how they will be processed
   */
   reverse_codegen_stack(&code_gen_stack);
-  //pop the global scope
   pop_scope(&code_gen_stack);
-//   print_codegen_variables();
   function(root,file);
   fclose(file);
 

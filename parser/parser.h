@@ -20,7 +20,7 @@ typedef struct Node{
 
 
 Node *createNode(char *);
-Node *increment_decrement(Node *,Token **);
+Node *postfix_prefix(Node *,Token **);
 Node *parser(Token *);
 void handle_exit_system(Node *current,Token **);
 Node *parse_expression(Token **);
