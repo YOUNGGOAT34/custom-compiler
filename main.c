@@ -10,7 +10,7 @@
 
 
 int main(void){
-    FILE *file=fopen("test.g","r");
+    FILE *file=fopen("test.c","r");
      if (file == NULL) {
         
         perror("Failed to open file");
@@ -30,7 +30,7 @@ int main(void){
    system("nasm -f elf64 generated.asm -o generated.o");
    system("ld generated.o -o generated");
  
-  // print_table();
+  // // print_table();
 
   return WEXITSTATUS(system("./generated"));
   // return 0;

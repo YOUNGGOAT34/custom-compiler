@@ -106,7 +106,7 @@ Table *create_table(void) {
         table->map->buckets[i] = NULL;
     }
 
-    table->current_offset = 0;
+    table->current_offset = 8;
     return table;
 }
 

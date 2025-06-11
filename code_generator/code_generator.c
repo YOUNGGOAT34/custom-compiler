@@ -289,12 +289,12 @@ void do_while(Node *root,FILE *file){
 void generate_data_section(Node *root,FILE *file){
    
    if(!root) return;
-  
+   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
    /*
    if the function encounters a variable it defines it in the data section
    It might be a function though.
    */
-   if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")){
+   if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0){
      
      
       fprintf(file,"\t%s dq 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
@@ -426,36 +426,45 @@ void traverse(Node *root, FILE *file) {
          do_while(root,file);
      }else if(strcmp(root->value,"POSTPREFIX")==0){
        postfix_prefix_statement(root,file);
-  
    }else if(strcmp(root->value,"UNARYASSIGNMENT")==0){
         handle_unary_assignment(root,file);
+   }else if(strcmp(root->value,"int")==0 && root->left->right && strcmp(root->left->right->value,"FUNCTIONCALL")==0){
+        Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
+        if(var){
+
+         fprintf(file,"\tcall %s\n",root->left->right->left->value);
+         fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+        }else{
+           printf("Not found %s\n",root->left->left->value);
+           exit(0);
+        }
+     
+        traverse(root->right,file);
+       
+        
    }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
       traverse(root->right, file);
-       
        if(root->type==INT ){
-         
          // fprintf(file,"\tmov rax,%s\n",root->value);
          fprintf(file,"\tpush QWORD %s\n",root->value);
-         }else if(root->type==OPERATOR){
+          
+      }else if(root->type==OPERATOR){
             //if it is an =,+=,-=,/=,*= sign then the value that is top of the stack is the computation of the left subtree.
            if(strcmp(root->value,"=")==0){
               
-             
-              Variable *var=search_variable(&code_gen_stack,root->left->value);
+              Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
               if(var){
-                
               
                 fprintf(file,"\tpop QWORD[rbp-%d]\n",var->offset);
               }else{
-                printf("Not found %s\n",root->value);
-                exit(1);
+                fprintf(file,"\tpop QWORD [%s]\n",root->left->value);
               }
                
            }else if(strcmp(root->value,"+=")==0){
 
-               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                fprintf(file,"\tpop rax\n");
                fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
@@ -465,7 +474,7 @@ void traverse(Node *root, FILE *file) {
                }
               
            }else if(strcmp(root->value,"-=")==0){
-               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                fprintf(file,"\tpop rax\n");
                fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
@@ -474,7 +483,7 @@ void traverse(Node *root, FILE *file) {
                exit(1);
                }
            }else if(strcmp(root->value,"*=")==0){
-               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                fprintf(file,"\tpop rax\n");
                fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
@@ -484,7 +493,7 @@ void traverse(Node *root, FILE *file) {
                exit(1);
                }
            }else if(strcmp(root->value,"*=")==0){
-               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                fprintf(file,"\tpop rax\n");
                fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
@@ -494,7 +503,7 @@ void traverse(Node *root, FILE *file) {
                exit(1);
                }
            }else if(strcmp(root->value,"/=")==0){
-               Variable *var=search_variable(&code_gen_stack,root->left->value);
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
                fprintf(file,"\tpop rbx\n");
@@ -525,11 +534,13 @@ void traverse(Node *root, FILE *file) {
     
        }else if(root->type==IDENTIFIER && strcmp(root->value,"ASSIGN")!=0 &&strcmp(root->value,"POSTPREFIX")!=0 && !root->left ){
          
-          Variable *var=search_variable(&code_gen_stack,root->value);
-          
+          Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->value);
           if(var){
           fprintf(file,"\tpush QWORD [rbp-%d]\n",var->offset);
-         
+           
+          }else{
+           
+             fprintf(file,"\tpush QWORD [%s]\n",root->value);
           }
           
          
@@ -622,6 +633,27 @@ void function(Node *root,FILE *file){
    function(root->right,file);
    
 }
+
+/*
+ Generating code for global variables :
+ we see a function ,we do not traverse it
+*/
+void generate_global_variables(Node *root,FILE *file){
+   if(!root) return;
+   //returning at this point because we don't want to generate code inside functions
+   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
+   /*
+   if the function encounters a variable it defines it in the data section
+   It might be a function though.(we don't want to get here)
+   */
+   if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0){
+      traverse(root->left,file);
+   }
+
+   generate_global_variables(root->left,file);
+   generate_global_variables(root->right,file);
+
+}
 //entry point of code generation.
 void code_generator(Node *root){
    
@@ -632,10 +664,12 @@ void code_generator(Node *root){
   }
 
   fprintf(file,"section .data\n");
-  // generate_data_section(root,file);
+  generate_data_section(root,file);
   fprintf(file,"section .text\n");
   fprintf(file,"\tglobal _start\n");
   fprintf(file,"_start:\n");
+  //generate code for global variables;;;;;;;;
+  generate_global_variables(root,file);
   fprintf(file,"\tjmp main\n");
   /*
     The code generation scope stack at this point is in reverse ,,

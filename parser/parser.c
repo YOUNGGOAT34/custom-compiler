@@ -268,11 +268,14 @@ Node *create_function(Node *node,Token **current_token_ptr){
 
   
   */
+      
       Token *token=*current_token_ptr;
+      
       Node *return_type_node=initialize_node(token->value,token->type);
       char *return_type=token->value;
       Param *params=NULL;
       node->left=return_type_node;
+     
       token++;
       
       Node *identifier_node=initialize_node(token->value,token->type);
@@ -281,16 +284,19 @@ Node *create_function(Node *node,Token **current_token_ptr){
       if (get_function(function_table, name) != NULL) {
         fprintf(stderr, "\033[1;31mError:\033[0m Redefinition of function '%s' at line %zu ,'%s' was initially defined on line %zu\n", name, token->line_num,name,get_function(function_table,name)->line_number);
         exit(1); 
-    }
+      }
       return_type_node->left=identifier_node;
       token++;
       Node *open_parens_node=initialize_node(token->value,token->type);
       identifier_node->left=open_parens_node;
+     
       token++;
+      
       //Parameters
       int params_capacity=4;
       int param_count=0;
       params=malloc(sizeof(Param)*params_capacity);
+      
    while(strcmp(token->value,")")!=0){
      if(param_count>=params_capacity){
        
@@ -351,14 +357,20 @@ Node *create_function(Node *node,Token **current_token_ptr){
         node=open_curly_node;
         token++;
         while(strcmp(token->value,"return")!=0){
+           
           if(strcmp(token->value,"int")==0){
+             printf("%s\n",(token+1)->value);
              node=create_variables(node,&token);
           }else if(token->type==IDENTIFIER){
             if(strcmp((token+1)->value,"++")==0 || strcmp((token+1)->value,"--")==0){
                
               node=postfix_prefix(node,&token);
               
+            }else if(strcmp((token+1)->value,"(")==0){
+              
+              node=function_call(node,return_type_node,&token);
             }else{
+             
               node=handle_variable_reassignment(node,&token);
             }
 
@@ -611,14 +623,12 @@ void handle_comments(Token **current_token_ptr){
 //create variables
 
 Node *create_variables(Node *current,Token **current_token_ptr){
-  
-    Token *token=*current_token_ptr;
-   
     
+    Token *token=*current_token_ptr;
     Node *var_node=initialize_node(token->value,token->type);
     //variable type i.e int,char ,float etc....
     char *type=token->value;
-   
+     
     current->left=var_node;
     token++;
     // The next expected is an identifier;
@@ -627,13 +637,15 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     }
      
     if (token->type==IDENTIFIER){
+      
        token++;
        if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
       }
       //  printf("%s\n",(token-1)->value);
       if(strcmp(token->value,";")==0){
-          var_node->value="INITIALIZE";
+          
+          var_node->value="DECLARATION";
           Node *identifier_node=initialize_node((token-1)->value,(token-1)->type);
           var_node->left=identifier_node;
           table_insert_variable(current_scope(&scope_stack),(token-1)->value, type, token->line_num, size_of_type(type));
@@ -647,7 +659,6 @@ Node *create_variables(Node *current,Token **current_token_ptr){
      
       //check if it is a function
       if(strcmp(token->value,"(")==0) {
-       
         return create_function(current,current_token_ptr);
       }
       /*
@@ -666,32 +677,39 @@ Node *create_variables(Node *current,Token **current_token_ptr){
 
        Node *identifier_node=initialize_node(token->value,token->type);
        char *identifier_name=token->value;
-       
       
-       if (hashmap_get(current_scope(&scope_stack)->map, identifier_name) != NULL){
+        
+       if (search_variable(&scope_stack, identifier_name) != NULL){
+        
         fprintf(stderr, "\033[0;31m Error\033[0m : redefination of '%s',it was initially defined on line %zu\n", identifier_name,search_variable(&scope_stack,token->value)->line_number);
           exit(1);  
        }
        
+  
        table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
        table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
       
        operator_node->left=identifier_node;
-     
+      
        token++;
        token++;
        //next token expected should be an integer or an expression
       if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
        }
-
+     
+       if(token->type==IDENTIFIER && strcmp((token+1)->value,"(")==0){
+        
+        *current_token_ptr=token;
+        return function_call(operator_node,var_node,current_token_ptr);
       
-    
+       }
+       
       if (token->type==INT){
         
       // Node *integer_node=initialize_node(NULL,token->value,token->type);
       operator_node->right=parse_expression(&token);
-      // token++;
+    
     }else{
       missing_token_error("integer",*(token-1));
     }
@@ -719,7 +737,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
   }
  
   *current_token_ptr=token;
- 
+
   return var_node->right;
   
 }
@@ -922,8 +940,62 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
    
 }
 
-//handle while statements
 /*
+  When making a call to a function we need:
+   Ensure equal number of arguments as function parameters are passed
+   Ensure the funtion is defined.
+
+*/
+
+Node *function_call(Node *current,Node *parent,Token **current_token_ptr){
+  Token *token=*current_token_ptr;
+ 
+  if (get_function(function_table,token->value) == NULL) {
+      fprintf(stderr, "\033[1;31mError:\033[0m Function: '%s' at line %zu , is not defined ,c doesn't allow implicit declaration\n", token->value, token->line_num);
+      exit(1); 
+    }
+    Node *call_node=initialize_node("FUNCTIONCALL",token->type);
+    if(current->type==OPERATOR){
+      
+      current->right=call_node;
+    }else{
+       current->left=call_node;
+    }
+    Node *function_name=initialize_node(token->value,token->type);
+    
+    call_node->left=function_name;
+    token++;
+    if(strcmp(token->value,"EOF")==0){
+      end_of_tokens_error(token->line_num);
+    }
+    if(strcmp(token->value,"(")==0){
+       Node *open_parens_node=initialize_node(token->value,token->type);
+       function_name->left=open_parens_node;
+       token++;
+       if(strcmp(token->value,")")==0){
+          Node *close_parens_node=initialize_node(token->value,token->type);
+          open_parens_node->right=close_parens_node;
+          token++;
+          if(strcmp(token->value,";")==0){
+             Node *semi_colon_node=initialize_node(token->value,token->type);
+             parent->right=semi_colon_node;
+             token++;
+          }else{
+            missing_token_error("';'",*(token-1));
+          }
+       }else{
+         missing_token_error("')'",*(token-1));
+       }
+    }else{
+       missing_token_error("'('",*(token-1));
+    }
+
+    *current_token_ptr=token;
+    return parent->right;
+}
+
+/*
+  Handling while statements
   In nested scopes ,I don't want to push or pop from the code generation scope ,,cause really what we need is 
   to know the function offset size so that we can know how many bytes to allocate on the stack
   for the variables defined in there ,,but for the parsing stack ,I have to parse and pop from nested scopes
@@ -1276,6 +1348,7 @@ Node *parser(Token *tokens) {
                 Just let the program go to create_variables function then in there ,if the token after the identifier is '(' instead of '=' 
                 call the create_function function 
                */
+              
                current=create_variables(current,&current_token);
               
                
@@ -1305,7 +1378,7 @@ Node *parser(Token *tokens) {
            // check if the variable is declared before updating it
           
            if(current_token->type==IDENTIFIER){
-                
+          
                if(!check_variable(current_token->value)){
                   fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", current_token->value, current_token->line_num);
                   exit(1);
@@ -1317,13 +1390,11 @@ Node *parser(Token *tokens) {
               }else if(strcmp((current_token+1)->value,"+=")==0){
                   //pass
               }else{
-               
+                
                 current=handle_variable_reassignment(current,&current_token);
                 
               }
               
-              
-            
           }
           
            break; 
