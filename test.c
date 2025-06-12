@@ -1,15 +1,18 @@
 
-
-
+int d=2;
+int e=d;
 int func(){
   int a=3;
-   int c=4;
-  return a+c;
-}
+  int c=4;
+  
+
+  int k=a;
+  return k;
+ }
 int main(){
   
-  int c=func();
- 
+  int c=4;
+  c*=d+2;
    return c;
 }
 

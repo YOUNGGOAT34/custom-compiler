@@ -14,6 +14,7 @@
 typedef struct Node{
    char *value;
    TokenType type;
+   
    struct Node *left;
    struct Node *right;
  } Node;

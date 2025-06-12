@@ -25,6 +25,7 @@ Node *initialize_node(char *val,TokenType type){
     node->value=malloc(sizeof(char)*2);
     node->value=strdup(val);
     node->type=type;
+   
     node->left = NULL;
     node->right = NULL;
 
@@ -485,6 +486,7 @@ Node *parse_multiplication(Token **current_token_ptr) {
       Node *right = parse_primary(&token);
       op_node->left = left;
       op_node->right = right;
+     
       left = op_node;
 
       
@@ -512,9 +514,7 @@ Node *parse_expression(Token **current_token_ptr) {
       op_node->right = right;
       left = op_node;
 
-      
   }
-
   *current_token_ptr=token;
 
   return left;
@@ -656,7 +656,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
           *current_token_ptr=token;
           return semi_colon_node;
       }
-     
+      
       //check if it is a function
       if(strcmp(token->value,"(")==0) {
         return create_function(current,current_token_ptr);
@@ -676,9 +676,9 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        }
 
        Node *identifier_node=initialize_node(token->value,token->type);
-       char *identifier_name=token->value;
       
-        
+       char *identifier_name=token->value;
+    
        if (search_variable(&scope_stack, identifier_name) != NULL){
         
         fprintf(stderr, "\033[0;31m Error\033[0m : redefination of '%s',it was initially defined on line %zu\n", identifier_name,search_variable(&scope_stack,token->value)->line_number);
@@ -699,19 +699,19 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        }
      
        if(token->type==IDENTIFIER && strcmp((token+1)->value,"(")==0){
-        
         *current_token_ptr=token;
         return function_call(operator_node,var_node,current_token_ptr);
       
        }
        
-      if (token->type==INT){
+      if (token->type==INT || token->type==IDENTIFIER){
         
       // Node *integer_node=initialize_node(NULL,token->value,token->type);
       operator_node->right=parse_expression(&token);
     
     }else{
-      missing_token_error("integer",*(token-1));
+    
+      missing_token_error("integer or an identifier",*(token-1));
     }
     }else{
        missing_token_error("identifier",*(token-1));
@@ -802,6 +802,7 @@ Node *unary_assignment(Node *node,Token **current_token_ptr){
       
       
       Node *identifier_node=initialize_node(token->value,token->type);
+     
       op_node->left=identifier_node;
       //skip twice since we have already processed the assignment operator
       token++;
@@ -896,6 +897,7 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
         exit(1);
       }
       Node *identifier_node=initialize_node(token->value,token->type);
+     
       op_node->left=identifier_node;
       //skip twice since we have already processed the assignment operator
       token++;
@@ -949,7 +951,6 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
 
 Node *function_call(Node *current,Node *parent,Token **current_token_ptr){
   Token *token=*current_token_ptr;
- 
   if (get_function(function_table,token->value) == NULL) {
       fprintf(stderr, "\033[1;31mError:\033[0m Function: '%s' at line %zu , is not defined ,c doesn't allow implicit declaration\n", token->value, token->line_num);
       exit(1); 

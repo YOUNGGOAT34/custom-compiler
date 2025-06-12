@@ -1,31 +1,22 @@
 section .data
+	d dq 0
+	e dq 0
 section .text
 	global _start
 _start:
+	mov QWORD[d],2
+	mov rax,QWORD[d]
+	mov QWORD[e],rax
 	jmp main
 func:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 24
-	push QWORD [rbp-8]
-	push QWORD 3
-	pop QWORD[rbp-8]
-	pop rdi
-	pop rax
-	push rax
-	push QWORD [rbp-16]
-	push QWORD 4
-	pop QWORD[rbp-16]
-	pop rdi
-	pop rax
-	push rax
-	push QWORD [rbp-8]
-	push QWORD [rbp-16]
-	pop rdi
-	pop rax
-	add rax,rdi
-	push rax
-	pop rax
+	sub rsp, 32
+	mov QWORD[rbp-8],3
+	mov QWORD[rbp-16],4
+	mov rax,QWORD[rbp-8]
+	mov QWORD[rbp-24],rax
+	mov rax,QWORD[rbp-24]
 	mov rsp, rbp
 	pop rbp
 	ret
@@ -33,10 +24,15 @@ main:
 	push rbp
 	mov rbp, rsp
 	sub rsp, 16
-	call func
+	mov QWORD[rbp-8],4
+	mov rbx,[d]
+	mov rax,2
+	add rax,rbx
+	push rax
+	pop rax
+	imul rax,QWORD[rbp-8]
 	mov QWORD[rbp-8],rax
-	push QWORD [rbp-8]
-	pop rdi
+	mov rdi,QWORD[rbp-8]
 	mov rax, 60
 	mov rsp, rbp
 	pop rbp

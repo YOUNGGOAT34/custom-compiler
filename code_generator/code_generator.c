@@ -403,6 +403,116 @@ void postfix_prefix_statement(Node *root,FILE *file){
    traverse(root->right,file);
 }
 
+/*
+  In this function we wanna handle initialization like:
+   int a=3;
+
+   or something like :
+   variable1=integer/variable2
+
+   We don't need to traverse the subtree just move the value into the variable
+*/
+
+void initialization(Node *root,FILE *file){
+    if(!root) return;
+     
+
+    Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
+         if(var){
+             
+             
+             if(strcmp(root->left->value,"=")==0){
+
+                if(root->left->right->type==INT){
+                  fprintf(file,"\tmov QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                }else if(root->left->right->type==IDENTIFIER){
+                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                   if(right_var){
+                     
+                      fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                      fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                   }else{
+                     
+                     fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+                     fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                   }
+                }
+             }else{
+                if(strcmp(root->left->value,"+=")==0){
+                  if(root->left->right->type==INT){
+                     fprintf(file,"\tadd QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                   }else if(root->left->right->type==IDENTIFIER){
+                      Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                      if(right_var){
+                        
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                      }else{
+                        fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                      }
+                   }
+                }else if(strcmp(root->left->value,"-=")==0){
+                  if(root->left->right->type==INT){
+                     fprintf(file,"\tsub QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                   }else if(root->left->right->type==IDENTIFIER){
+                      Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                      if(right_var){
+                        
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                      }else{
+                        fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                      }
+                   }
+                }else if(strcmp(root->left->value,"*=")==0){
+                  if(root->left->right->type==INT){
+                        fprintf(file,"mov rax,QWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\timul rax,%s\n",root->left->right->value);
+                        fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                   }else if(root->left->right->type==IDENTIFIER){
+                      Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                      if(right_var){
+                        
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                         fprintf(file,"\timul rax,QWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                      }else{
+                        fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\timul rax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                      }
+                   }
+                }else if(strcmp(root->left->value,"/=")==0){
+                  if(root->left->right->type==INT){
+                     fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                     fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
+                     fprintf(file,"\tidiv rbx\n");
+                     fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                   }else if(root->left->right->type==IDENTIFIER){
+                      Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                      if(right_var){
+                        
+                         fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                         fprintf(file,"\tidiv rbx\n");
+                         fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                      }else{
+                        fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\tmov rbx,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tidiv rbx\n");
+                        fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                      }
+                   }
+                }
+             }
+             
+         }
+         traverse(root->right,file);
+
+}
+
 Node *parent=NULL;
 Table *scope;
 void traverse(Node *root, FILE *file) {
@@ -438,19 +548,22 @@ void traverse(Node *root, FILE *file) {
            printf("Not found %s\n",root->left->left->value);
            exit(0);
         }
-     
+        
         traverse(root->right,file);
        
         
-   }else{
+    }else if((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 ) && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || root->left->right->type==IDENTIFIER) && root->left->left){
+         
+       initialization(root,file); 
+   }
+    
+    else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
       traverse(root->right, file);
-       if(root->type==INT ){
-         // fprintf(file,"\tmov rax,%s\n",root->value);
-         fprintf(file,"\tpush QWORD %s\n",root->value);
-          
-      }else if(root->type==OPERATOR){
+         if(root->type==INT ){
+         //  fprintf(file,"\tpush QWORD %s\n",root->value);
+          }else if(root->type==OPERATOR){
             //if it is an =,+=,-=,/=,*= sign then the value that is top of the stack is the computation of the left subtree.
            if(strcmp(root->value,"=")==0){
               
@@ -463,14 +576,34 @@ void traverse(Node *root, FILE *file) {
               }
                
            }else if(strcmp(root->value,"+=")==0){
-
+              
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
-               fprintf(file,"\tpop rax\n");
+                if(root->right->type==IDENTIFIER){
+                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
+                   if(right_var){
+                      fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                   }else{
+                     fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                   }
+                }else{
+                  fprintf(file,"\tpop rax\n");
+                }
+              
                fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
                }else{
-               printf("Not found %s\n",root->value);
-               exit(1);
+                  if(root->right->type==IDENTIFIER){
+                     Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
+                     if(right_var){
+                        fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                     }else{
+                       fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                     }
+                  }else{
+                    fprintf(file,"\tpop rax\n");
+                  }
+                
+                 fprintf(file,"\tadd [%s],rax\n",root->left->value);
                }
               
            }else if(strcmp(root->value,"-=")==0){
@@ -513,37 +646,60 @@ void traverse(Node *root, FILE *file) {
                printf("Not found %s\n",root->value);
                exit(1);
                }
+        }else{
+
+           //so basically pop the last two values pushed on the, and appy this operator on them 
+           //and then finally push this result back to the stack
+           // popping twice since we know if we have an operator then there must be a left value and a right value
+             if(root->left->type==IDENTIFIER && root->right->type==IDENTIFIER){
+                Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+                Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
+                fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",left_var->offset);
+                
+             }else if(root->left->type==IDENTIFIER && root->right->type==INT){
+                Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+                if(left_var){
+                  fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",left_var->offset);
+                }else{
+                  fprintf(file,"\tmov rbx,[%s]\n",root->left->value);
+                }
+                  fprintf(file,"\tmov rax,%s\n",root->right->value);
+                
+             }else if(root->right->type==IDENTIFIER && root->left->type==INT){
+               Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
+               if(right_var){
+                  fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+               }else{
+                  fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+               }
+               fprintf(file,"\tmov rbx,%s\n",root->left->value);
+             }else if(root->right->type==INT && root->left->type==INT){
+                 fprintf(file,"\tmov rax,%s",root->right->value);
+                 fprintf(file,"\tmov rbx,%s",root->left->value);
+             }else if(root->left->type==OPERATOR){
+               if(root->right->type==INT){
+                  fprintf(file,"\tmov rax,%s",root->right->value);
+               }else if(root->right->type==IDENTIFIER){
+                  Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
+                  if(right_var){
+                     fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                  }else{
+                     fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                  }
+               }
+               fprintf(file,"\tpop rbx\n");
+             }
+
+               if(strcmp(root->value,"+")==0) fprintf(file,"\tadd rax,rbx\n");
+               if(strcmp(root->value,"-")==0) fprintf(file,"\tsub rax,rbx\n");
+               if(strcmp(root->value,"*")==0) fprintf(file,"\timul rax,rbx\n");
+         
+               if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv rbx\n");
+               fprintf(file,"\tpush rax\n");
         }
           
-          //so basically pop the last two values pushed on the, and appy this operator on them 
-          //and then finally push this result back to the stack
-          // popping twice since we know if we have an operator then there must be a left value and a right value
-           fprintf(file,"\tpop rdi\n");
-           fprintf(file,"\tpop rax\n");
     
-          if(strcmp(root->value,"+")==0) fprintf(file,"\tadd rax,rdi\n");
-    
-          if(strcmp(root->value,"-")==0) fprintf(file,"\tsub rax,rdi\n");
-           
-    
-          if(strcmp(root->value,"*")==0) fprintf(file,"\timul rax,rdi\n");
-    
-          if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv rdi\n");
-         
-          fprintf(file,"\tpush rax\n");
-    
-       }else if(root->type==IDENTIFIER && strcmp(root->value,"ASSIGN")!=0 &&strcmp(root->value,"POSTPREFIX")!=0 && !root->left ){
-         
-          Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->value);
-          if(var){
-          fprintf(file,"\tpush QWORD [rbp-%d]\n",var->offset);
-           
-          }else{
-           
-             fprintf(file,"\tpush QWORD [%s]\n",root->value);
-          }
-          
-         
        }else if(strcmp(root->value,"ASSIGN")==0){
             root=root->left;
        }
@@ -552,8 +708,18 @@ void traverse(Node *root, FILE *file) {
           If the return value is an integer then we move it to rdi
           If the return value is an identifier ,then we move the value at that memory location into rdi i.e mov rdi,[identifer]
           */
-
-          fprintf(file,"\tpop rdi\n");
+          if(root->left->type==IDENTIFIER){
+            Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+            if(var){
+               fprintf(file,"\tmov rdi,QWORD[rbp-%d]\n",var->offset);
+            }else{
+               fprintf(file,"\tmov rax,[%s]\n",root->left->value);
+            }
+         }else{
+            fprintf(file,"\tpop rdi\n");
+         }
+           
+          
           fprintf(file, "\tmov rax, 60\n"); 
            /*
           We are back from traversing the current scope ,,therefore we need to clean up the stack
@@ -569,7 +735,17 @@ void traverse(Node *root, FILE *file) {
             it means that we have pushed our return result onto the stack therefore we can pop it into rax
             and also we wanna restore the stack 
            */
-            fprintf(file,"\tpop rax\n");
+            if(root->left->type==IDENTIFIER){
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+               if(var){
+                  fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+               }else{
+                  fprintf(file,"\tmov rax,[%s]\n",root->left->value);
+               }
+            }else{
+               fprintf(file,"\tpop rax\n");
+            }
+           
             fprintf(file, "\tmov rsp, rbp\n"); 
             fprintf(file, "\tpop rbp\n"); 
             fprintf(file, "\tret\n"); 
@@ -647,7 +823,20 @@ void generate_global_variables(Node *root,FILE *file){
    It might be a function though.(we don't want to get here)
    */
    if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0){
-      traverse(root->left,file);
+      if(root->left->right && root->left->right->type==OPERATOR){
+         traverse(root->left,file);
+      }else{
+         if(root->left->right ){
+
+            if(root->left->right->type==INT){
+              fprintf(file,"\tmov QWORD[%s],%s\n",root->left->left->value,root->left->right->value);
+            }else if(root->left->right->type==IDENTIFIER){
+               fprintf(file,"\tmov rax,QWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov QWORD[%s],rax\n",root->left->left->value);
+            }
+         }
+      }
+    
    }
 
    generate_global_variables(root->left,file);
