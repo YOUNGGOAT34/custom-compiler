@@ -337,8 +337,18 @@ void handle_unary_assignment(Node *root,FILE *file){
                fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
              }
          }else{
-            fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined in the code generation scope stack\n",root->left->right->value);
-            exit(1);
+
+            if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->value);
+             }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->value);
+             }
+            
+           
          }
          
       }else if(root->left->right && root->left->right->left && root->left->right->type==OPERATOR){
@@ -355,15 +365,85 @@ void handle_unary_assignment(Node *root,FILE *file){
                fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
              }
          }else{
-            
-            fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined in the code generation scope stack\n",root->left->right->value);
-            exit(1);
+            if(root->left->right && strcmp(root->left->right->value,"--")==0){
+               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+                
+             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+             }
+           
          }
          
       }
     }else{
-       fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined in the code generation scope stack\n",root->left->left->value);
-       exit(1);
+
+      if(root->left->right && root->left->right->type==IDENTIFIER){
+        
+         Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->value);
+         if(rhs_var){
+            if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+              
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               
+               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+             }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+             }
+         }else{
+            if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+              
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               
+               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->value);
+             }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->value);
+             }
+         
+         }
+         
+      }else if(root->left->right && root->left->right->left && root->left->right->type==OPERATOR){
+         Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->left->value);
+         if(rhs_var){
+            
+            if(root->left->right && strcmp(root->left->right->value,"--")==0){
+                
+               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               
+             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+             }
+         }else{
+            if(root->left->right && strcmp(root->left->right->value,"--")==0){
+                
+               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               
+             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+             }
+           
+         }
+         
+      }
+
+
     }
     
 
@@ -418,7 +498,7 @@ void initialization(Node *root,FILE *file){
      
 
     Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
-         if(var){
+           if(var){
              
              
              if(strcmp(root->left->value,"=")==0){
@@ -555,9 +635,7 @@ void traverse(Node *root, FILE *file) {
     }else if((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 ) && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || root->left->right->type==IDENTIFIER) && root->left->left){
          
        initialization(root,file); 
-   }
-    
-    else{
+   }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
       traverse(root->right, file);
@@ -647,7 +725,6 @@ void traverse(Node *root, FILE *file) {
                exit(1);
                }
         }else{
-
            //so basically pop the last two values pushed on the, and appy this operator on them 
            //and then finally push this result back to the stack
            // popping twice since we know if we have an operator then there must be a left value and a right value
@@ -713,8 +790,10 @@ void traverse(Node *root, FILE *file) {
             if(var){
                fprintf(file,"\tmov rdi,QWORD[rbp-%d]\n",var->offset);
             }else{
-               fprintf(file,"\tmov rax,[%s]\n",root->left->value);
+               fprintf(file,"\tmov rdi,[%s]\n",root->left->value);
             }
+         }else if(root->left->type==INT){
+            fprintf(file,"\tmov rdi,%s\n",root->left->value);
          }else{
             fprintf(file,"\tpop rdi\n");
          }
@@ -734,6 +813,7 @@ void traverse(Node *root, FILE *file) {
             so now we call a function from somewhere we know the return value is in rax,,when we traverse back to return statement
             it means that we have pushed our return result onto the stack therefore we can pop it into rax
             and also we wanna restore the stack 
+            A small optimization to make is: if the return value is not an expression we can just move it to rdi ,no pushing it to the stack then popping it into rdi
            */
             if(root->left->type==IDENTIFIER){
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
@@ -742,6 +822,8 @@ void traverse(Node *root, FILE *file) {
                }else{
                   fprintf(file,"\tmov rax,[%s]\n",root->left->value);
                }
+            }else if(root->left->type==INT){
+               fprintf(file,"\tmov rdi,%s\n",root->left->value);
             }else{
                fprintf(file,"\tpop rax\n");
             }
@@ -755,13 +837,11 @@ void traverse(Node *root, FILE *file) {
       if (strcmp(root->value, "exit") == 0) {
        fprintf(file, "\tpop rdi\n"); // Final result to rdi before exiting
         fprintf(file, "\tmov rax, 60\n"); // Exit syscall
-       
        fprintf(file, "\tsyscall\n");
        //not checking for the semi colon since the parent is the last to be evaluated ,,post order traversal
     }
    }
 }
-
 
 /*
  for functions we wanna create a label for each ,corresponding to the function name...i.e 

@@ -25,14 +25,10 @@ main:
 	mov rbp, rsp
 	sub rsp, 16
 	mov QWORD[rbp-8],4
-	mov rbx,[d]
-	mov rax,2
-	add rax,rbx
-	push rax
-	pop rax
-	imul rax,QWORD[rbp-8]
-	mov QWORD[rbp-8],rax
-	mov rdi,QWORD[rbp-8]
+	mov rax,[e]
+	mov [d],rax
+	DEC QWORD[e]
+	mov rdi,2
 	mov rax, 60
 	mov rsp, rbp
 	pop rbp
