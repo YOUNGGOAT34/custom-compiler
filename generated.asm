@@ -1,34 +1,31 @@
 section .data
-	d dq 0
-	e dq 0
 section .text
 	global _start
 _start:
-	mov QWORD[d],2
-	mov rax,QWORD[d]
-	mov QWORD[e],rax
 	jmp main
-func:
-	push rbp
-	mov rbp, rsp
-	sub rsp, 32
-	mov QWORD[rbp-8],3
-	mov QWORD[rbp-16],4
-	mov rax,QWORD[rbp-8]
-	mov QWORD[rbp-24],rax
-	mov rax,QWORD[rbp-24]
-	mov rsp, rbp
-	pop rbp
-	ret
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 16
-	mov QWORD[rbp-8],4
-	mov rax,[e]
-	mov [d],rax
-	DEC QWORD[e]
-	mov rdi,2
+	sub rsp, 8
+	jmp .after0
+.msg0:db 72,101,108,108,111,10
+.after0:
+.len0 equ $-.msg0
+	mov rax,1
+	mov rdi,1
+	lea rsi,[rel .msg0]
+	mov rdx,.len0
+	syscall
+	jmp .after1
+.msg1:db 87,111,114,108,100,10
+.after1:
+.len1 equ $-.msg1
+	mov rax,1
+	mov rdi,1
+	lea rsi,[rel .msg1]
+	mov rdx,.len1
+	syscall
+	mov rdi,1
 	mov rax, 60
 	mov rsp, rbp
 	pop rbp

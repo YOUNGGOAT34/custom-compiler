@@ -23,6 +23,7 @@ Token *generate_keyword_identifier(char *current,int *current_index){
       else if(strcmp(token->value,"while")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"do")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"else")==0) token->type=KEYWORD;
+      else if(strcmp(token->value,"printf")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"return")==0) token->type=KEYWORD;
       else token->type=IDENTIFIER;
       
@@ -35,19 +36,22 @@ Token *generate_keyword_identifier(char *current,int *current_index){
 Token *generate_string(char *current,int *current_index){
     Token *token=(Token *)malloc(sizeof(Token));
     token->value=malloc(sizeof(char)*255);
-    (*current_index)++;//skip the opening quote
+    
     int index=0;
-
+    token->value[index++]=current[*current_index];
+    (*current_index)++;
     while(current[*current_index]!='"'){
        token->value[index++]=current[*current_index];
        (*current_index)++;
     }
      
-    token->value[index]='\0';
 
-    if(current[*current_index]=='"'){
-        (*current_index)++;
-    }
+    //at this point this is a closing quote marks
+    token->value[index++]=current[*current_index];
+    (*current_index)++;
+    token->value[index]='\0';
+  
+   
 
     token->type=STRING;
     token->line_num=line_num;

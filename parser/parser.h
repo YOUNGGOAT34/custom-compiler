@@ -33,6 +33,7 @@ Node *create_variables(Node *,Token **);
 Node *if_statement_generation(Node *,Token **);
 Node *while_statement_generation(Node *node,Token **);
 Node *handle_variable_reassignment(Node *,Token **);
+Node *handle_writing_to_the_console(Node *,Token **);
 void handle_comments(Token **);
 
 

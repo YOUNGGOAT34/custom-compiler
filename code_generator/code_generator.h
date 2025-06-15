@@ -8,9 +8,10 @@
 #include "../symbol_table/hashmap.h"
 #include "../scope/stack.h"
 
-void traverse(Node *root, FILE *file);
-void generate_data_section(Node *root,FILE *file);
-void code_generator(Node *root);
-void if_statement(Node *root,FILE *file);
+void traverse(Node *, FILE *);
+void generate_data_section(Node *,FILE *);
+void write_to_console(Node *,FILE *);
+void code_generator(Node *);
+void if_statement(Node *,FILE *);
 
 #endif

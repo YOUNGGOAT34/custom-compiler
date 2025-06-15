@@ -381,6 +381,8 @@ Node *create_function(Node *node,Token **current_token_ptr){
             node=if_statement_generation(node,&token);
           }else if(strcmp(token->value,"do")==0){
              node=do_while_loop(node,&token);
+          }else if(strcmp(token->value,"printf")==0){
+             node=handle_writing_to_the_console(node,&token);
           }
         }
 
@@ -618,6 +620,55 @@ void handle_comments(Token **current_token_ptr){
     }
    
     
+}
+/*
+  first we should have printf,,open brackets ,the string ,close brackets ,and finally the semi colon to terminate it
+
+*/
+
+Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
+   Token *token=*current_token_ptr;
+
+   Node *print_node=initialize_node(token->value,token->type);
+   node->left=print_node;
+   token++;
+   if(strcmp(token->value,"EOF")==0){
+     end_of_tokens_error(token->line_num);
+
+   }
+
+   if(strcmp(token->value,"(")==0){
+      Node *open_parens_node=initialize_node(token->value,token->type);
+      print_node->left=open_parens_node;
+      token++;
+      if(token->type==STRING){
+          Node *string_node=initialize_node(token->value,token->type);
+          open_parens_node->left=string_node;
+          token++;
+          if(strcmp(token->value,")")==0){
+            Node *close_parens_node=initialize_node(token->value,token->type);
+            open_parens_node->right=close_parens_node;
+            token++;
+          }
+      }else{
+         missing_token_error("string literal",*(token-1));
+      }
+      if(strcmp(token->value,";")==0){
+        Node *semi_colon_node=initialize_node(token->value,token->type);
+        print_node->right=semi_colon_node;
+        token++;
+      }else{
+        missing_token_error(";",*(token-1));
+      }
+
+   }else{
+     missing_token_error("(",*(token-1));
+   }
+
+   *current_token_ptr=token;
+   
+  return print_node->right;
+
 }
 
 //create variables
@@ -1366,6 +1417,8 @@ Node *parser(Token *tokens) {
               
                current=do_while_loop(current,&current_token);
                
+           }else if(strcmp(current_token->value,"printf")==0){
+             current=handle_writing_to_the_console(current,&current_token);
            }
          
           break;

@@ -5,7 +5,7 @@
 static int if_label_counter=0;
 static int while_label_counter=0;
 static int do_while_label_counter=0;
-
+static int in_line_label=0;
 //while statement code generation
 void while_statement(Node *root,FILE *file){
     char start_loop[64],end_loop [64];
@@ -635,6 +635,8 @@ void traverse(Node *root, FILE *file) {
     }else if((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 ) && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || root->left->right->type==IDENTIFIER) && root->left->left){
          
        initialization(root,file); 
+   }else if(strcmp(root->value,"printf")==0){
+        write_to_console(root,file);
    }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
@@ -888,6 +890,69 @@ void function(Node *root,FILE *file){
    function(root->left,file);
    function(root->right,file);
    
+}
+/*
+  so a string like "Hello world" is passed in
+  for a character ,we convert it to its equivalent ascii
+  and the escape sequances:
+  \t-9
+  \n-10
+  \\-92
+  \"-34
+  \0-0
+*/
+void string_to_bytes(FILE *file,const char *string){
+    fprintf(file,"db ");
+    int first_comma=1;
+    const char *string_pointer=string;
+    string_pointer++;
+
+    while(*string_pointer && *string_pointer !='"'){
+        if(!first_comma) fprintf(file,",");
+        first_comma=0;
+
+        if(*string_pointer=='\\'){
+           string_pointer++;
+           switch (*string_pointer){
+               case 'n': fprintf(file, "10"); break;
+               case 't': fprintf(file, "9"); break;
+               case '\\': fprintf(file, "92"); break;
+               case '"': fprintf(file, "34"); break;
+               case '0': fprintf(file, "0"); break;
+               default: fprintf(file, "%d", (unsigned char)*string_pointer); break;
+           }
+        }else{
+           fprintf(file,"%d",(unsigned char)*string_pointer);
+        }
+
+        string_pointer++;
+        
+    }
+    fprintf(file,"\n");
+}
+
+void write_to_console(Node *root,FILE *file){
+    if(!root) return;
+    
+    if(root->left->left && root->left->left->type==STRING){
+        
+        fprintf(file,"\tjmp .after%d\n",in_line_label);
+        fprintf(file,".msg%d:",in_line_label);
+        string_to_bytes(file,root->left->left->value);
+        fprintf(file,".after%d:\n",in_line_label);
+        fprintf(file,".len%d equ $-.msg%d\n",in_line_label,in_line_label); 
+        fprintf(file,"\tmov rax,1\n");
+        fprintf(file,"\tmov rdi,1\n");
+        fprintf(file,"\tlea rsi,[rel .msg%d]\n",in_line_label);
+        fprintf(file,"\tmov rdx,.len%d\n",in_line_label);
+        fprintf(file,"\tsyscall\n");
+
+       
+     
+    }
+    in_line_label++;
+   
+    traverse(root->right,file);
 }
 
 /*
