@@ -891,6 +891,48 @@ void function(Node *root,FILE *file){
    function(root->right,file);
    
 }
+
+/*
+  printing numbers
+  asm doesnt allow direct printing of integers to the console
+  therefor to get around the integerm must be converted to a string first
+*/
+
+void print_number(FILE *file){
+    
+   
+    fprintf(file,"print_int:\n");
+    fprintf(file, "\tpush rbp\n"); 
+    fprintf(file, "\tmov rbp, rsp\n"); 
+    
+    fprintf(file,"\tmov rax,rdx\n");
+    fprintf(file,"\tmov rsi,buffer+20\n");
+    fprintf(file,"\tmov rbx,10\n");
+    fprintf(file,".loop:\n");
+    fprintf(file,"\txor rdx,rdx\n");
+    fprintf(file,"\tidiv rbx\n");
+    fprintf(file,"\tadd dl,'0'\n");
+    fprintf(file,"\tdec rsi\n");
+    fprintf(file,"\tmov [rsi],dl\n");
+    fprintf(file,"\ttest rax,rax\n");
+    fprintf(file,"\tjnz .loop\n");
+    fprintf(file,".print: \n");
+    fprintf(file,"\tmov rax,1\n");
+    fprintf(file,"\t mov rdi,1\n");
+    fprintf(file,"\tmov rdx,buffer+20\n");
+    fprintf(file,"\tsub rdx,rsi\n");
+    fprintf(file,"\tsyscall\n");
+     //clear the buffer since we might have another integer to print.
+    fprintf(file,"\tmov rdi,buffer\n");
+    fprintf(file,"\tmov rcx,21\n");
+    fprintf(file,"\tmov al,0\n");
+    fprintf(file,"\trep stosb\n");
+    fprintf(file,"\tmov rsp,rbp\n");
+    fprintf(file,"\tpop rbp\n");
+    fprintf(file,"\tret\n");
+
+}
+
 /*
   so a string like "Hello world" is passed in
   for a character ,we convert it to its equivalent ascii
@@ -900,60 +942,124 @@ void function(Node *root,FILE *file){
   \\-92
   \"-34
   \0-0
+
+  Also the string might contain format specifiers like %d ,
+  need a buffer to hold the characters of the string 
+  Once the program gets to a format specifier we generate the bytes of the string in the buffer and print them,
+  flush the buffer ,then call the function to print the datatype in the format specifier i.e integer
+  after returning from printing we continue printing the string
+  and if a format specifier is passed in but no argument ,we will tream the format specifier as part of the string
 */
-void string_to_bytes(FILE *file,const char *string){
-    fprintf(file,"db ");
-    int first_comma=1;
-    const char *string_pointer=string;
-    string_pointer++;
+void string_to_bytes(Node *node, FILE *file, int label) {
+   if (!node) return;
 
-    while(*string_pointer && *string_pointer !='"'){
-        if(!first_comma) fprintf(file,",");
-        first_comma=0;
+   const char *p = node->value + 1; // Skip opening quote
+   char buffer[1024];
+   int buffer_index = 0;
+   int string_format_count=0;
+   Node *args=node->left;
+   while (*p && *p != '"') {
+       if (*p == '%') {
+           p++;
+          
 
-        if(*string_pointer=='\\'){
-           string_pointer++;
-           switch (*string_pointer){
-               case 'n': fprintf(file, "10"); break;
-               case 't': fprintf(file, "9"); break;
-               case '\\': fprintf(file, "92"); break;
-               case '"': fprintf(file, "34"); break;
-               case '0': fprintf(file, "0"); break;
-               default: fprintf(file, "%d", (unsigned char)*string_pointer); break;
-           }
-        }else{
-           fprintf(file,"%d",(unsigned char)*string_pointer);
+         if (*p == 'd') {
+            
+            if(buffer_index>0){//means that there was some characters before the integer therefore we should print them first ,i.e "Hello %d"
+                 fprintf(file,"\tjmp .after%d\n",label);
+                 fprintf(file,".msg%d: db ",label);
+                 for(int i=0;i<buffer_index;++i){
+                    if(i!=0) fprintf(file,",");
+                    fprintf(file,"%d",(unsigned char) buffer[i]);
+
+                 }
+                 fprintf(file,"\n.len%d: equ $-.msg%d\n",label,label);
+                 fprintf(file,".after%d:\n",label);
+                 fprintf(file,"\tmov rax,1\n");
+                 fprintf(file,"\tmov rdi,1\n");
+                 fprintf(file,"\tlea rsi,[rel .msg%d]\n",label);
+                 fprintf(file,"\tmov rdx,.len%d\n",label);
+                 fprintf(file,"\tsyscall\n");
+
+                 label=in_line_label++;
+                 string_format_count++;
+                 buffer_index=0;
+
+            }
+
+            
+
+            //call function to print the integer
+            if(args){
+               
+               fprintf(file, "\tmov rdx, %s\n", args->value); 
+               fprintf(file, "\tcall print_int\n");
+               args=args->left;
+            }else{
+               
+               buffer[buffer_index++]='%';
+               buffer[buffer_index++]='d';
+              
+            }
+          
+         
+               
+            p++; 
+            continue;
         }
+       } else if (*p == '\\') {
+           p++;
+           switch (*p) {
+               case 'n': buffer[buffer_index++] = 10; break;
+               case 't': buffer[buffer_index++] = 9; break;
+               case '\\': buffer[buffer_index++] = 92; break;
+               case '"': buffer[buffer_index++] = 34; break;
+               case '0': buffer[buffer_index++] = 0; break;
+               default: buffer[buffer_index++] = (unsigned char)*p; break;
+           }
+       } else {
+           buffer[buffer_index++] = *p;
+       }
 
-        string_pointer++;
-        
-    }
-    fprintf(file,"\n");
-}
+       p++;
+   }
 
-void write_to_console(Node *root,FILE *file){
-    if(!root) return;
-    
-    if(root->left->left && root->left->left->type==STRING){
-        
-        fprintf(file,"\tjmp .after%d\n",in_line_label);
-        fprintf(file,".msg%d:",in_line_label);
-        string_to_bytes(file,root->left->left->value);
-        fprintf(file,".after%d:\n",in_line_label);
-        fprintf(file,".len%d equ $-.msg%d\n",in_line_label,in_line_label); 
-        fprintf(file,"\tmov rax,1\n");
-        fprintf(file,"\tmov rdi,1\n");
-        fprintf(file,"\tlea rsi,[rel .msg%d]\n",in_line_label);
-        fprintf(file,"\tmov rdx,.len%d\n",in_line_label);
-        fprintf(file,"\tsyscall\n");
-
-       
-     
-    }
-    in_line_label++;
+ 
+   // Final flush
+   if (buffer_index > 0) {
+       fprintf(file, "\tjmp .after%d\n", label);
+       fprintf(file, ".msg%d: db ", label);
+       for (int i = 0; i < buffer_index; ++i) {
+           if (i != 0) fprintf(file, ",");
+           fprintf(file, "%d", (unsigned char)buffer[i]);
+       }
+       fprintf(file, "\n.len%d equ $-.msg%d\n", label, label);
+       fprintf(file, ".after%d:\n", label);
+       fprintf(file, "\tmov rax, 1\n");
+       fprintf(file, "\tmov rdi, 1\n");
+       fprintf(file, "\tlea rsi, [rel .msg%d]\n", label);
+       fprintf(file, "\tmov rdx, .len%d\n", label);
+       fprintf(file, "\tsyscall\n");
+      
+   }
    
-    traverse(root->right,file);
 }
+
+
+void write_to_console(Node *root, FILE *file) {
+   if (!root) return;
+
+   if (root->left->left && root->left->left->type == STRING) {
+       int label = in_line_label++;
+
+       // Just call string_to_bytes and let it handle everything
+       string_to_bytes(root->left->left, file, label);
+    
+   }
+  
+   traverse(root->right, file);
+}
+
 
 /*
  Generating code for global variables :
@@ -998,12 +1104,14 @@ void code_generator(Node *root){
   }
 
   fprintf(file,"section .data\n");
+  fprintf(file,"buffer: TIMES 21 dB 0\n");
   generate_data_section(root,file);
   fprintf(file,"section .text\n");
   fprintf(file,"\tglobal _start\n");
   fprintf(file,"_start:\n");
   //generate code for global variables;;;;;;;;
   generate_global_variables(root,file);
+  
   fprintf(file,"\tjmp main\n");
   /*
     The code generation scope stack at this point is in reverse ,,
@@ -1013,6 +1121,7 @@ void code_generator(Node *root){
   reverse_codegen_stack(&code_gen_stack);
   pop_scope(&code_gen_stack);
   function(root,file);
+  print_number(file);
   fclose(file);
 
 }

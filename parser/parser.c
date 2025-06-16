@@ -26,8 +26,8 @@ Node *initialize_node(char *val,TokenType type){
     node->value=strdup(val);
     node->type=type;
    
-    node->left = NULL;
-    node->right = NULL;
+    node->left=NULL;
+    node->right=NULL;
 
     return node;
 }
@@ -645,9 +645,37 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
           Node *string_node=initialize_node(token->value,token->type);
           open_parens_node->left=string_node;
           token++;
+          Node *args=NULL;
+          if(strcmp(token->value,",")==0){
+             token++;
+            
+             if(token->type==INT){
+              args=initialize_node(token->value,token->type);
+              string_node->left=args;
+              token++;
+            }
+             
+
+              while(strcmp(token->value,")")!=0){
+                if(token->type==INT){
+                  Node *int_node=initialize_node(token->value,token->type);
+                  args->left=int_node;
+                  args=int_node;
+                  token++;
+                }
+
+                if(strcmp(token->value,",")==0){
+                  token++;
+                  continue;
+                }
+              }
+            
+          }
+          
           if(strcmp(token->value,")")==0){
             Node *close_parens_node=initialize_node(token->value,token->type);
             open_parens_node->right=close_parens_node;
+            
             token++;
           }
       }else{
@@ -655,6 +683,9 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
       }
       if(strcmp(token->value,";")==0){
         Node *semi_colon_node=initialize_node(token->value,token->type);
+        if(semi_colon_node->left){
+           printf("Here\n");
+        }
         print_node->right=semi_colon_node;
         token++;
       }else{
@@ -666,7 +697,7 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
    }
 
    *current_token_ptr=token;
-   
+  
   return print_node->right;
 
 }

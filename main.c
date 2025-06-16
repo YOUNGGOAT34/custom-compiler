@@ -31,7 +31,7 @@ int main(void){
    system("ld generated.o -o generated");
  
   // // print_table();
-
+  
   return WEXITSTATUS(system("./generated"));
   // return 0;
 
