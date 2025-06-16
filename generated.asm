@@ -7,9 +7,10 @@ _start:
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 8
+	sub rsp, 9
+	mov BYTE[rbp-8],'d'
 	jmp .after0
-.msg0: db 72,101,108,108,111,32
+.msg0: db 99,104,97,114,58,32
 .len0: equ $-.msg0
 .after0:
 	mov rax,1
@@ -17,47 +18,16 @@ main:
 	lea rsi,[rel .msg0]
 	mov rdx,.len0
 	syscall
-	mov rdx, 1
-	call print_int
+	mov rdx,[rbp-8]
+	call print_char
 	jmp .after1
-.msg1: db 32,115,101,99,111,110,100,32,118,97,108,117,101,32
-.len1: equ $-.msg1
+.msg1: db 10
+.len1 equ $-.msg1
 .after1:
-	mov rax,1
-	mov rdi,1
-	lea rsi,[rel .msg1]
-	mov rdx,.len1
-	syscall
-	mov rdx, 2
-	call print_int
-	jmp .after2
-.msg2: db 32
-.len2: equ $-.msg2
-.after2:
-	mov rax,1
-	mov rdi,1
-	lea rsi,[rel .msg2]
-	mov rdx,.len2
-	syscall
-	mov rdx, 4
-	call print_int
-	jmp .after3
-.msg3: db 32
-.len3: equ $-.msg3
-.after3:
-	mov rax,1
-	mov rdi,1
-	lea rsi,[rel .msg3]
-	mov rdx,.len3
-	syscall
-	jmp .after4
-.msg4: db 37,100,32,100,111,110,101,10
-.len4 equ $-.msg4
-.after4:
 	mov rax, 1
 	mov rdi, 1
-	lea rsi, [rel .msg4]
-	mov rdx, .len4
+	lea rsi, [rel .msg1]
+	mov rdx, .len1
 	syscall
 	mov rdi,1
 	mov rax, 60
@@ -70,6 +40,11 @@ print_int:
 	mov rax,rdx
 	mov rsi,buffer+20
 	mov rbx,10
+	xor rcx,rcx
+	test rax,rax
+	jns .loop
+	neg rax
+	mov rcx,1
 .loop:
 	xor rdx,rdx
 	idiv rbx
@@ -78,6 +53,10 @@ print_int:
 	mov [rsi],dl
 	test rax,rax
 	jnz .loop
+	cmp rcx,1
+	jne .print
+	dec rsi
+	mov byte[rsi],'-'
 .print: 
 	mov rax,1
 	 mov rdi,1
@@ -89,5 +68,18 @@ print_int:
 	mov al,0
 	rep stosb
 	mov rsp,rbp
+	pop rbp
+	ret
+	print_char:
+	push rbp
+	mov rbp,rsp
+	sub rbp,1
+	mov [rbp],dl
+	lea rsi,[rbp]
+	mov rax,1
+	mov rdx,1
+	mov rdi,1
+	syscall
+	mov rbp,rsp
 	pop rbp
 	ret

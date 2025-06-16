@@ -17,7 +17,7 @@ Token *generate_keyword_identifier(char *current,int *current_index){
 
       if(strcmp(token->value,"exit")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"if")==0) token->type=KEYWORD;
-      else if(strcmp(token->value,"String")==0) token->type=KEYWORD;
+      else if(strcmp(token->value,"char")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"int")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"for")==0)  token->type=KEYWORD;
       else if(strcmp(token->value,"while")==0) token->type=KEYWORD;
@@ -158,7 +158,7 @@ Token *generate_separator_operator(char *current,int *current_index,TokenType ty
      token->type=UNKNOWN;
    
      
-     token->value=malloc(sizeof(char)*2);
+     token->value=malloc(sizeof(char)*3);
      if((current[*current_index] == '=' && current[*current_index + 1] == '=') || 
         (current[*current_index] == '!' && current[*current_index + 1] == '=') || 
         (current[*current_index] == '<' && current[*current_index + 1] == '=') || 
@@ -191,6 +191,21 @@ Token *generate_separator_operator(char *current,int *current_index,TokenType ty
 
 }
 
+Token *generate_char(char *current,int *current_index){
+   Token *token=malloc(sizeof(Token));
+   token->value=malloc(sizeof(char)*4);
+   token->type=UNKNOWN;
+   token->value[0]=current[*current_index];
+   token->value[1]=current[*current_index+1];
+   token->value[2]=current[*current_index+2];
+   token->value[3]='\0';
+
+   (*current_index)+=3;
+    token->type=CHAR;
+    token->line_num=line_num;
+   return token;
+}
+
 
 
 /*
@@ -208,6 +223,7 @@ const char *token_type_to_string(TokenType type) {
     case IDENTIFIER: return "IDENTIFIER";
     case STRING: return "STRING";
     case COMMENT: return "COMMENT";
+    case CHAR:return "char";
     case END_OF_TOKENS: return "END_OF_TOKENS";
     default: return "UNKNOWN";
   }
@@ -291,6 +307,8 @@ Token *lexer(FILE *file){
            }else if(curr=='"'){
             token=generate_string(current,&current_index);
                 
+           }else if(curr=='\''){
+              token=generate_char(current,&current_index);
            }else if(isalpha(curr)){
                token=generate_keyword_identifier(current,&current_index);
            }else{

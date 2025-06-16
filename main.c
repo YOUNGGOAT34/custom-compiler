@@ -16,15 +16,14 @@ int main(void){
         perror("Failed to open file");
         return 1;
     }
-
+  
 
   Token *tokens=lexer(file);
 
   
   
-  //  print_tokens(tokens);
+   print_tokens(tokens);
    Node *root= parser(tokens);
-   
    code_generator(root);
    
    system("nasm -f elf64 generated.asm -o generated.o");

@@ -1,8 +1,8 @@
 
 
 int main(){
-   printf("Hello %d second value %d %d %d done\n",1,2,4);
-   
+   char ab='d';
+   printf("char: %c\n",ab);
    return 1;
 }
 

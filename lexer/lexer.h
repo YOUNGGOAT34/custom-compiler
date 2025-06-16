@@ -10,6 +10,7 @@
 typedef enum {
    BEGINNING,
    INT,
+   CHAR,
    KEYWORD,
    SEPARATOR,
    OPERATOR,

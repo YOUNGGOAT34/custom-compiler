@@ -637,6 +637,14 @@ void traverse(Node *root, FILE *file) {
        initialization(root,file); 
    }else if(strcmp(root->value,"printf")==0){
         write_to_console(root,file);
+   }else if(strcmp(root->value,"char")==0){
+      
+      Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
+      if(var){
+         fprintf(file,"\tmov BYTE[rbp-%d],%s\n",var->offset,root->left->right->value);
+
+      }
+      traverse(root->right,file);
    }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
@@ -733,41 +741,41 @@ void traverse(Node *root, FILE *file) {
              if(root->left->type==IDENTIFIER && root->right->type==IDENTIFIER){
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
-                fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
-                fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",left_var->offset);
+                fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
                 
              }else if(root->left->type==IDENTIFIER && root->right->type==INT){
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 if(left_var){
-                  fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",left_var->offset);
+                  fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
                 }else{
-                  fprintf(file,"\tmov rbx,[%s]\n",root->left->value);
+                  fprintf(file,"\tmov rax,[%s]\n",root->left->value);
                 }
-                  fprintf(file,"\tmov rax,%s\n",root->right->value);
+                  fprintf(file,"\tmov rbx,%s\n",root->right->value);
                 
              }else if(root->right->type==IDENTIFIER && root->left->type==INT){
                Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                if(right_var){
-                  fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                  fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
                }else{
-                  fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                  fprintf(file,"\tmov rbx,[%s]\n",root->right->value);
                }
-               fprintf(file,"\tmov rbx,%s\n",root->left->value);
+               fprintf(file,"\tmov rax,%s\n",root->left->value);
              }else if(root->right->type==INT && root->left->type==INT){
-                 fprintf(file,"\tmov rax,%s",root->right->value);
-                 fprintf(file,"\tmov rbx,%s",root->left->value);
+                 fprintf(file,"\tmov rbx,%s\n",root->right->value);
+                 fprintf(file,"\tmov rax,%s\n",root->left->value);
              }else if(root->left->type==OPERATOR){
                if(root->right->type==INT){
-                  fprintf(file,"\tmov rax,%s",root->right->value);
+                  fprintf(file,"\tmov rbx,%s",root->right->value);
                }else if(root->right->type==IDENTIFIER){
                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                   if(right_var){
-                     fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                     fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
                   }else{
-                     fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                     fprintf(file,"\tmov rbx,[%s]\n",root->right->value);
                   }
                }
-               fprintf(file,"\tpop rbx\n");
+               fprintf(file,"\tpop rax\n");
              }
 
                if(strcmp(root->value,"+")==0) fprintf(file,"\tadd rax,rbx\n");
@@ -908,6 +916,17 @@ void print_number(FILE *file){
     fprintf(file,"\tmov rax,rdx\n");
     fprintf(file,"\tmov rsi,buffer+20\n");
     fprintf(file,"\tmov rbx,10\n");
+    //the number might be a negative so, firts check if rcx is 0
+    fprintf(file,"\txor rcx,rcx\n");
+    /*checking for negativity ,I will use test to set the negative flag
+    if the sign flag is not set ,just skip to the integer to string conversion
+    if the sign flag is set ,make the integer positive first ,
+    and move 1 to rcx ,will be used to mark the - sign
+    */
+    fprintf(file,"\ttest rax,rax\n");
+    fprintf(file,"\tjns .loop\n");
+    fprintf(file,"\tneg rax\n");
+    fprintf(file,"\tmov rcx,1\n");
     fprintf(file,".loop:\n");
     fprintf(file,"\txor rdx,rdx\n");
     fprintf(file,"\tidiv rbx\n");
@@ -916,6 +935,12 @@ void print_number(FILE *file){
     fprintf(file,"\tmov [rsi],dl\n");
     fprintf(file,"\ttest rax,rax\n");
     fprintf(file,"\tjnz .loop\n");
+    //set the '-' if it is a negative
+    fprintf(file,"\tcmp rcx,1\n");
+    fprintf(file,"\tjne .print\n");
+    fprintf(file,"\tdec rsi\n");
+    fprintf(file,"\tmov byte[rsi],'-'\n");
+
     fprintf(file,".print: \n");
     fprintf(file,"\tmov rax,1\n");
     fprintf(file,"\t mov rdi,1\n");
@@ -933,16 +958,39 @@ void print_number(FILE *file){
 
 }
 
+ /*
+   In this function ,reserve 1 byte of memory on the stack to store the character temporarily
+   point rsi to that memory location on the stack
+   then print normally
+ */
+
+void print_char(FILE *file){
+   fprintf(file,"\tprint_char:\n");
+   fprintf(file,"\tpush rbp\n");
+   fprintf(file,"\tmov rbp,rsp\n");
+   fprintf(file,"\tsub rbp,1\n");
+   fprintf(file,"\tmov [rbp],dl\n");//dl-lower of the rdx ,since it is a character ,we only need 8bits
+   fprintf(file,"\tlea rsi,[rbp]\n");
+   fprintf(file,"\tmov rax,1\n");
+   fprintf(file,"\tmov rdx,1\n");
+   fprintf(file,"\tmov rdi,1\n");
+   fprintf(file,"\tsyscall\n");
+   fprintf(file,"\tmov rbp,rsp\n");
+   fprintf(file,"\tpop rbp\n");
+   fprintf(file,"\tret\n");
+
+}
+
 /*
   so a string like "Hello world" is passed in
-  for a character ,we convert it to its equivalent ascii
+  for each character in the string ,we convert it to its equivalent ascii
   and the escape sequances:
   \t-9
   \n-10
   \\-92
   \"-34
   \0-0
-
+  
   Also the string might contain format specifiers like %d ,
   need a buffer to hold the characters of the string 
   Once the program gets to a format specifier we generate the bytes of the string in the buffer and print them,
@@ -986,13 +1034,19 @@ void string_to_bytes(Node *node, FILE *file, int label) {
                  buffer_index=0;
 
             }
-
-            
-
             //call function to print the integer
             if(args){
+                if(args->type==INT){
+                  fprintf(file, "\tmov rdx, %s\n", args->value); 
+                }else if(args->type==IDENTIFIER){
+                    Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,args->value);
+                    if(var){
+                        fprintf(file,"\tmov rdx,[rbp-%d]\n",var->offset);
+                     }else{
+                        fprintf(file,"\tmov rdx,[%s]\n",args->value);
+                     }
+                }
                
-               fprintf(file, "\tmov rdx, %s\n", args->value); 
                fprintf(file, "\tcall print_int\n");
                args=args->left;
             }else{
@@ -1006,6 +1060,63 @@ void string_to_bytes(Node *node, FILE *file, int label) {
                
             p++; 
             continue;
+        }else if(*p=='c'){
+           
+         if(buffer_index>0){
+            fprintf(file,"\tjmp .after%d\n",label);
+            fprintf(file,".msg%d: db ",label);
+            for(int i=0;i<buffer_index;++i){
+               if(i!=0) fprintf(file,",");
+               fprintf(file,"%d",(unsigned char) buffer[i]);
+
+            }
+            fprintf(file,"\n.len%d: equ $-.msg%d\n",label,label);
+            fprintf(file,".after%d:\n",label);
+            fprintf(file,"\tmov rax,1\n");
+            fprintf(file,"\tmov rdi,1\n");
+            fprintf(file,"\tlea rsi,[rel .msg%d]\n",label);
+            fprintf(file,"\tmov rdx,.len%d\n",label);
+            fprintf(file,"\tsyscall\n");
+
+            label=in_line_label++;
+            string_format_count++;
+            buffer_index=0;
+
+       }
+       //call function to print the integer
+       if(args){
+           if(args->type==CHAR){
+             fprintf(file, "\tmov rdx, %s\n", args->value); 
+           }else if(args->type==IDENTIFIER){
+               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,args->value);
+               if(var){
+                   fprintf(file,"\tmov rdx,[rbp-%d]\n",var->offset);
+                }else{
+                   fprintf(file,"\tmov rdx,[%s]\n",args->value);
+                }
+           }
+          
+          fprintf(file, "\tcall print_char\n");
+          args=args->left;
+       }else{
+          
+          buffer[buffer_index++]='%';
+          buffer[buffer_index++]='d';
+         
+       }
+     
+    
+          
+       p++; 
+       continue;
+
+
+
+
+
+
+
+
         }
        } else if (*p == '\\') {
            p++;
@@ -1122,6 +1233,7 @@ void code_generator(Node *root){
   pop_scope(&code_gen_stack);
   function(root,file);
   print_number(file);
+  print_char(file);
   fclose(file);
 
 }

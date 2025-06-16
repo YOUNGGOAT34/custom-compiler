@@ -359,8 +359,7 @@ Node *create_function(Node *node,Token **current_token_ptr){
         token++;
         while(strcmp(token->value,"return")!=0){
            
-          if(strcmp(token->value,"int")==0){
-             printf("%s\n",(token+1)->value);
+          if(strcmp(token->value,"int")==0 || strcmp(token->value,"char")==0){
              node=create_variables(node,&token);
           }else if(token->type==IDENTIFIER){
             if(strcmp((token+1)->value,"++")==0 || strcmp((token+1)->value,"--")==0){
@@ -649,21 +648,23 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
           if(strcmp(token->value,",")==0){
              token++;
             
-             if(token->type==INT){
-              args=initialize_node(token->value,token->type);
+             if(token->type==INT || token->type==IDENTIFIER){
+              
+               args=initialize_node(token->value,token->type);
               string_node->left=args;
               token++;
             }
+            
              
 
               while(strcmp(token->value,")")!=0){
-                if(token->type==INT){
+                if(token->type==INT || token->type==IDENTIFIER){
                   Node *int_node=initialize_node(token->value,token->type);
                   args->left=int_node;
                   args=int_node;
                   token++;
                 }
-
+                
                 if(strcmp(token->value,",")==0){
                   token++;
                   continue;
@@ -710,9 +711,9 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     Node *var_node=initialize_node(token->value,token->type);
     //variable type i.e int,char ,float etc....
     char *type=token->value;
-     
     current->left=var_node;
     token++;
+     
     // The next expected is an identifier;
     if(strcmp(token->value,"EOF")==0){
        end_of_tokens_error(token->line_num);
@@ -724,7 +725,7 @@ Node *create_variables(Node *current,Token **current_token_ptr){
        if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
       }
-      //  printf("%s\n",(token-1)->value);
+      
       if(strcmp(token->value,";")==0){
           
           var_node->value="DECLARATION";
@@ -767,10 +768,10 @@ Node *create_variables(Node *current,Token **current_token_ptr){
           exit(1);  
        }
        
-  
+        
        table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
        table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
-      
+       
        operator_node->left=identifier_node;
       
        token++;
@@ -791,7 +792,13 @@ Node *create_variables(Node *current,Token **current_token_ptr){
       // Node *integer_node=initialize_node(NULL,token->value,token->type);
       operator_node->right=parse_expression(&token);
     
-    }else{
+    }
+    else if(token->type==CHAR){
+        Node *char_node=initialize_node(token->value,token->type);
+        operator_node->right=char_node;
+        token++;
+    }
+    else{
     
       missing_token_error("integer or an identifier",*(token-1));
     }
@@ -1424,7 +1431,7 @@ Node *parser(Token *tokens) {
                handle_exit_system(root,&current_token);
                
                break;
-           }else if(strcmp(current_token->value,"int")==0){
+           }else if(strcmp(current_token->value,"int")==0 || strcmp(current_token->value,"char")==0){
                //so this can be a variable being created or a function being created..
                /*
                 Instead of handling variable and function creation diffently in here
