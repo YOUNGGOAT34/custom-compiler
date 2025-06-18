@@ -289,12 +289,12 @@ void do_while(Node *root,FILE *file){
 void generate_data_section(Node *root,FILE *file){
    
    if(!root) return;
-   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
+   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0 && strcmp(root->left->left->value,"[")==0) return;
    /*
    if the function encounters a variable it defines it in the data section
    It might be a function though.
    */
-   if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0){
+   if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0 &&strcmp(root->left->left->value,"[")!=0){
      
      
       fprintf(file,"\t%s dq 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
@@ -493,6 +493,20 @@ void postfix_prefix_statement(Node *root,FILE *file){
    We don't need to traverse the subtree just move the value into the variable
 */
 
+
+void array_initialization(Node *root,FILE *file){
+    if(!root) return;
+
+    Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+    if(var){
+       
+       int offset=var->offset-(atoi(root->left->left->left->value)*size_of_type(var->type));
+       fprintf(file,"\tmov QWORD[rbp-%d],%s\n",offset,root->left->left->right->value);
+
+    }
+
+    traverse(root->right,file);
+}
 void initialization(Node *root,FILE *file){
     if(!root) return;
      
@@ -645,6 +659,8 @@ void traverse(Node *root, FILE *file) {
 
       }
       traverse(root->right,file);
+   }else if(strcmp(root->value,"ARR_ASSIGN")==0){
+        array_initialization(root,file);
    }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
@@ -795,6 +811,7 @@ void traverse(Node *root, FILE *file) {
           If the return value is an integer then we move it to rdi
           If the return value is an identifier ,then we move the value at that memory location into rdi i.e mov rdi,[identifer]
           */
+         //  if(root->left->type==IDENTIFIER && strcmp(tok))
           if(root->left->type==IDENTIFIER){
             Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
             if(var){

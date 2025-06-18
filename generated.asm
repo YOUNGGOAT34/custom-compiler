@@ -7,28 +7,9 @@ _start:
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 9
-	mov BYTE[rbp-8],'d'
-	jmp .after0
-.msg0: db 99,104,97,114,58,32
-.len0: equ $-.msg0
-.after0:
-	mov rax,1
-	mov rdi,1
-	lea rsi,[rel .msg0]
-	mov rdx,.len0
-	syscall
-	mov rdx,[rbp-8]
-	call print_char
-	jmp .after1
-.msg1: db 10
-.len1 equ $-.msg1
-.after1:
-	mov rax, 1
-	mov rdi, 1
-	lea rsi, [rel .msg1]
-	mov rdx, .len1
-	syscall
+	sub rsp, 28
+	mov QWORD[rbp-8],2
+	mov QWORD[rbp-4],2
 	mov rdi,1
 	mov rax, 60
 	mov rsp, rbp

@@ -1,8 +1,10 @@
 
 
 int main(){
-   char ab='d';
-   printf("char: %c\n",ab);
+   int array[5];
+   array[0]=2;
+   array[1]=2;
+
    return 1;
 }
 

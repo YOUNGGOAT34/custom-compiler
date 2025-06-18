@@ -11,7 +11,7 @@ FunctionTable *function_table;
 
 //A helper function to calculte the size of data types i.e int=4,char=1,double=8,float=4,,and I am gonna just have default as 4
 size_t size_of_type(const char *type) {
-  if (strcmp(type, "int") == 0) return 8;
+  if (strcmp(type, "int") == 0) return 4;
   else if (strcmp(type, "char") == 0) return 1;
   else if (strcmp(type, "float") == 0) return 4;
   else if (strcmp(type, "double") == 0) return 8;
@@ -397,7 +397,7 @@ Node *create_function(Node *node,Token **current_token_ptr){
           if(token->type==IDENTIFIER || token->type==INT){
             
             Node *return_value_node=parse_expression(&token);
-            
+             
             return_statement->left=return_value_node;
             
             //semi colon
@@ -452,7 +452,7 @@ Node *parse_primary(Token **current_token_ptr){
         //get the current scope, then get the variable
         
         Variable *variable=search_variable(&scope_stack,token->value);
-       
+        
         if(variable==NULL){
         
           fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): '%s' is not defined \n", token->line_num,token->value);
@@ -620,6 +620,103 @@ void handle_comments(Token **current_token_ptr){
    
     
 }
+
+
+  /*
+      int array[size];/int array[5]={1,2,3,4,5}/int array[]={1,2,3,4,5};
+    */
+     
+  Node *arrays(Node *node,Token **current_token_ptr){
+      Token *token=*current_token_ptr;
+      Node *return_type=initialize_node(token->value,token->type);
+      node->left=return_type;
+      token++;
+      if(strcmp(token->value,"EOF")==0){
+         end_of_tokens_error(token->line_num);
+      }
+      if(token->type==IDENTIFIER){
+          Node *array_name=initialize_node(token->value,token->type);
+          return_type->left=array_name;
+          token++;
+          if(strcmp(token->value,"EOF")==0){
+            end_of_tokens_error(token->line_num);
+          }
+          if(token->type==SEPARATOR && strcmp(token->value,"[")==0){
+              Node *open_square_brackets=initialize_node(token->value,token->type);
+              array_name->left=open_square_brackets;
+              token++;
+              if(strcmp(token->value,"EOF")==0){
+                end_of_tokens_error(token->line_num);
+              }
+              if(token->type==INT){
+                  Node *array_size=initialize_node(token->value,token->type);
+                  open_square_brackets->left=array_size;
+                   
+               
+                  table_insert_variable(current_scope(&scope_stack),(token-2)->value,(token-3)->value,token->line_num,size_of_type((token-3)->value)*atoi((token->value)));
+                  table_insert_variable(current_scope(&code_gen_stack),(token-2)->value,(token-3)->value,token->line_num,size_of_type((token-3)->value)*atoi((token->value)));
+                  token++;
+                  
+                   
+                  if(strcmp(token->value,"]")==0){
+                      Node *close_square_brackets=initialize_node(token->value,token->type);
+                      open_square_brackets->right=close_square_brackets;
+                      token++;
+                      if(strcmp(token->value,"EOF")==0){
+                         end_of_tokens_error(token->line_num);
+                         
+                      }
+                      if(token->type==SEPARATOR && strcmp(token->value,";")==0){
+                          Node *semi_colon_node=initialize_node(token->value,token->type);
+                          return_type->right=semi_colon_node;
+                          token++;
+                          *current_token_ptr=token;
+                          return semi_colon_node;
+                      }
+                  }else{
+                     missing_token_error("]",*(token-1));
+                  }
+              }
+           
+          }else{
+            missing_token_error("[",*(token-1));
+          }
+      }else{
+        missing_token_error("identifier",*(token-1));
+      }
+      *current_token_ptr=token;
+      return return_type->right;
+ }
+
+/*
+  Array assignment i.e arr[0]=some value
+*/
+
+Node *array_assignment(Node *node,Token **current_token_ptr){
+  Token *token=*current_token_ptr;
+   Node *array_assign=initialize_node("ARR_ASSIGN",token->type);
+   node->left=array_assign;
+   Node *identifier=initialize_node(token->value,token->type);
+   array_assign->left=identifier;
+   token+=2;
+   Node *index_node=initialize_node(token->value,token->type);
+   token+=2;
+   Node *operator_node=initialize_node(token->value,token->type);
+   identifier->left=operator_node;
+   operator_node->left=index_node;
+   token++;
+  //  Node *assignment_value=initialize_node(token->value,token->type);
+   operator_node->right=parse_expression(&token);
+  
+   Node *semi_colon_node=initialize_node(token->value,token->type);
+   array_assign->right=semi_colon_node;
+    token++;
+   *current_token_ptr=token;
+   return semi_colon_node;
+   
+}
+
+
 /*
   first we should have printf,,open brackets ,the string ,close brackets ,and finally the semi colon to terminate it
 
@@ -718,9 +815,12 @@ Node *create_variables(Node *current,Token **current_token_ptr){
     if(strcmp(token->value,"EOF")==0){
        end_of_tokens_error(token->line_num);
     }
-     
+  
+
     if (token->type==IDENTIFIER){
-      
+       if(strcmp((token+1)->value,"[")==0){
+           return arrays(current,current_token_ptr);
+       }
        token++;
        if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
@@ -768,12 +868,12 @@ Node *create_variables(Node *current,Token **current_token_ptr){
           exit(1);  
        }
        
-        
+       
        table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
        table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
-       
+        
        operator_node->left=identifier_node;
-      
+       
        token++;
        token++;
        //next token expected should be an integer or an expression
@@ -957,15 +1057,19 @@ Node *unary_assignment(Node *node,Token **current_token_ptr){
 }
 
 
+
 //function to handle variable reassignment
 Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
-   
+     
       Token *token=*current_token_ptr;
       Node *update_variable_node=initialize_node("ASSIGN",token->type);
       node->left=update_variable_node;
       if(strcmp(token->value,"EOF")==0){
         end_of_tokens_error(token->line_num);
      }
+       if((token+1)->type==SEPARATOR && strcmp((token+1)->value,"[")==0){
+          return array_assignment(node,current_token_ptr);
+       }
       if( ((token+3)->type==OPERATOR && strcmp((token+3)->value,"+")!=0 && strcmp((token+3)->value,"-")!=0 && strcmp((token+3)->value,"*")!=0\
        &&strcmp((token+3)->value,"/")!=0)
        

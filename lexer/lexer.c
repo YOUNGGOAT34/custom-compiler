@@ -298,8 +298,8 @@ Token *lexer(FILE *file){
            if(curr=='/' && (current[current_index+1]=='/' || current[current_index+1]=='*')){
               token=generate_comment(current,&current_index);
               
-           }else if (strchr("=+*-></!;(){},", curr)) {
-            TokenType type = strchr(";(){},", curr) ? SEPARATOR : OPERATOR;
+           }else if (strchr("=+*-></!;(){},[]", curr)) {
+            TokenType type = strchr(";(){},[]", curr) ? SEPARATOR : OPERATOR;
             token = generate_separator_operator(current, &current_index, type);
              }else if(isdigit(curr)){
                token=generate_number(current,&current_index);

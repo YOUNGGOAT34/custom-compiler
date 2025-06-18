@@ -18,11 +18,17 @@ int main(void){
     }
   
 
+    int array[]={1,2,3,4,5};
+   
+
+
+
+    printf("%d\n",array[3]);
   Token *tokens=lexer(file);
 
   
   
-   print_tokens(tokens);
+  //  print_tokens(tokens);
    Node *root= parser(tokens);
    code_generator(root);
    
