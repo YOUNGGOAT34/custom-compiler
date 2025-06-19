@@ -25,6 +25,7 @@ extern ScopeStack code_gen_stack;
 
 
 
+
 void init_scope_stack(ScopeStack *);
 void push_scope(ScopeStack *,Table *);
 void pop_scope(ScopeStack *);

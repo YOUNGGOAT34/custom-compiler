@@ -1,10 +1,13 @@
 
 
 int main(){
-   int array[5];
-   array[0]=2;
-   array[1]=2;
-
-   return 1;
+  int c=3;
+  int d=4;
+ 
+  int k;
+  k=++c;
+  printf("k:%d\n",k);
+ 
+   return d+2+k;
 }
 

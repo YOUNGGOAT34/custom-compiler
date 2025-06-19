@@ -247,12 +247,15 @@ void do_while(Node *root,FILE *file){
     jump based on the comparsion result
     */
     if(lhs->type==IDENTIFIER){
-      Variable *var=search_variable(&code_gen_stack,lhs->value);
+      Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,lhs->value);
+       
       if(var){
-         fprintf(file,"\tmov rax,[rbp-%d]\n",var->offset);
+         if(strcmp(var->type,"int")==0){
+            fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+         }
+        
       }else{
-         perror("Undefined variable\n");
-         exit(1);
+         fprintf(file,"\tmov eax,%s\n",lhs->value);
       }
     }
     if(rhs->type==INT){
@@ -289,20 +292,21 @@ void do_while(Node *root,FILE *file){
 void generate_data_section(Node *root,FILE *file){
    
    if(!root) return;
-   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0 && strcmp(root->left->left->value,"[")==0) return;
+   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
    /*
    if the function encounters a variable it defines it in the data section
    It might be a function though.
    */
    if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0 &&strcmp(root->left->left->value,"[")!=0){
-     
-     
-      fprintf(file,"\t%s dq 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
+      
+       
+      fprintf(file,"\t%s dd 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
                                                          then left of equal there is variable name ,and right is the expression or a value*/
      
    }
-
-   generate_data_section(root->left,file);//go left
+   
+ 
+   generate_data_section(root->left,file);
    generate_data_section(root->right,file);//recurse  right
 }
 
@@ -328,24 +332,24 @@ void handle_unary_assignment(Node *root,FILE *file){
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->value);
          if(rhs_var){
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
-               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
-               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
              }
          }else{
 
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
-               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->value);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
-               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->value);
              }
             
            
@@ -355,25 +359,25 @@ void handle_unary_assignment(Node *root,FILE *file){
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->left->value);
          if(rhs_var){
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
-               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
                
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
              }
          }else{
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
-               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
                 
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov [rbp-%d],rax\n",lhs_var->offset);
+               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
              }
            
          }
@@ -386,27 +390,27 @@ void handle_unary_assignment(Node *root,FILE *file){
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->value);
          if(rhs_var){
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
               
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
                
-               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
-               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
              }
          }else{
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
               
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
                
-               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->value);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
-               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->value);
              }
          
          }
@@ -417,26 +421,26 @@ void handle_unary_assignment(Node *root,FILE *file){
             
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
                 
-               fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
                
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov rax,[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
              }
          }else{
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
                 
-               fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
                
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC QWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov rax,[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov [%s],rax\n",root->left->left->value);
+               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
              }
            
          }
@@ -461,9 +465,9 @@ void postfix_prefix_statement(Node *root,FILE *file){
       if(var){
         
          if(strcmp(root->left->left->value,"++")==0){
-            fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+            fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
          }else if(strcmp(root->left->left->value,"--")==0){
-            fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+            fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
          }
          
       }
@@ -472,9 +476,9 @@ void postfix_prefix_statement(Node *root,FILE *file){
       if(var){
         
          if(strcmp(root->left->value,"++")==0){
-            fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+            fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
          }else if(strcmp(root->left->value,"--")==0){
-            fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+            fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
          }
          
       }
@@ -500,11 +504,12 @@ void array_initialization(Node *root,FILE *file){
     Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
     if(var){
        
-       int offset=var->offset-(atoi(root->left->left->left->value)*size_of_type(var->type));
-       fprintf(file,"\tmov QWORD[rbp-%d],%s\n",offset,root->left->left->right->value);
+       int offset=var->offset+(atoi(root->left->left->left->value)*size_of_type(var->type));
+       fprintf(file,"\tmov DWORD[rbp-%d],%s\n",offset,root->left->left->right->value);
 
     }
-
+   
+     
     traverse(root->right,file);
 }
 void initialization(Node *root,FILE *file){
@@ -518,85 +523,85 @@ void initialization(Node *root,FILE *file){
              if(strcmp(root->left->value,"=")==0){
 
                 if(root->left->right->type==INT){
-                  fprintf(file,"\tmov QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                  fprintf(file,"\tmov DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
                 }else if(root->left->right->type==IDENTIFIER){
                    Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                    if(right_var){
                      
-                      fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
-                      fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                      fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                      fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                    }else{
                      
-                     fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
-                     fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                     fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                     fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                    }
                 }
              }else{
                 if(strcmp(root->left->value,"+=")==0){
                   if(root->left->right->type==INT){
-                     fprintf(file,"\tadd QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     fprintf(file,"\tadd DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
                         
-                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
                       }else{
-                        fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                        fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
                       }
                    }
                 }else if(strcmp(root->left->value,"-=")==0){
                   if(root->left->right->type==INT){
-                     fprintf(file,"\tsub QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     fprintf(file,"\tsub DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
                         
-                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tsub QWORD[rbp-%d],eax\n",var->offset);
                       }else{
-                        fprintf(file,"\tmov rax,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                        fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
                       }
                    }
                 }else if(strcmp(root->left->value,"*=")==0){
                   if(root->left->right->type==INT){
-                        fprintf(file,"mov rax,QWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\timul rax,%s\n",root->left->right->value);
-                        fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                        fprintf(file,"mov eax,DWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
                         
-                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-                         fprintf(file,"\timul rax,QWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                         fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                       }else{
-                        fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\timul rax,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\timul eax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                       }
                    }
                 }else if(strcmp(root->left->value,"/=")==0){
                   if(root->left->right->type==INT){
-                     fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-                     fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
-                     fprintf(file,"\tidiv rbx\n");
-                     fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                     fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                     fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
+                     fprintf(file,"\tidiv ebx\n");
+                     fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
                         
-                         fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-                         fprintf(file,"\tidiv rbx\n");
-                         fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                         fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                         fprintf(file,"\tidiv ebx\n");
+                         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                       }else{
-                        fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\tmov rbx,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tidiv rbx\n");
-                        fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\tmov ebx,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tidiv ebx\n");
+                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                       }
                    }
                 }
@@ -633,11 +638,12 @@ void traverse(Node *root, FILE *file) {
    }else if(strcmp(root->value,"UNARYASSIGNMENT")==0){
         handle_unary_assignment(root,file);
    }else if(strcmp(root->value,"int")==0 && root->left->right && strcmp(root->left->right->value,"FUNCTIONCALL")==0){
+       
         Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
         if(var){
 
          fprintf(file,"\tcall %s\n",root->left->right->left->value);
-         fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
         }else{
            printf("Not found %s\n",root->left->left->value);
            exit(0);
@@ -661,6 +667,7 @@ void traverse(Node *root, FILE *file) {
       traverse(root->right,file);
    }else if(strcmp(root->value,"ARR_ASSIGN")==0){
         array_initialization(root,file);
+
    }else{
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       traverse(root->left, file);
@@ -673,10 +680,24 @@ void traverse(Node *root, FILE *file) {
               
               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
               if(var){
-              
-                fprintf(file,"\tpop QWORD[rbp-%d]\n",var->offset);
+                if(strcmp(var->type,"int")==0){
+                  fprintf(file,"pop rax\n");
+                  fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                }
+                
               }else{
-                fprintf(file,"\tpop QWORD [%s]\n",root->left->value);
+                Variable *var=search_global(root->left->value);
+                 if(var){
+                  if(strcmp(var->type,"int")==0){
+
+                     fprintf(file,"\tpop rax\n");
+                     fprintf(file,"\tmov DWORD [%s],eax\n",root->left->value);
+                  }else{
+                      printf("Not found\n");
+                      exit(1);
+                  }
+                 }
+                
               }
                
            }else if(strcmp(root->value,"+=")==0){
@@ -684,121 +705,230 @@ void traverse(Node *root, FILE *file) {
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                 if(root->right->type==IDENTIFIER){
+                  
                    Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                    if(right_var){
-                      fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                      if(strcmp(right_var->type,"int")==0){
+                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                      }
+                      
                    }else{
-                     fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                     Variable *var=search_global(root->left->value);
+                     if(strcmp(var->type,"int")==0){
+                       
+                        fprintf(file,"\tmov eax,DWORD[%s]\n",root->right->value);
+                     }else{
+                         printf("Not found\n");
+                         exit(1);
+                     }
+                     
                    }
                 }else{
                   fprintf(file,"\tpop rax\n");
                 }
               
-               fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+               fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
                }else{
                   if(root->right->type==IDENTIFIER){
+                     
                      Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                      if(right_var){
-                        fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                        if(strcmp(right_var->type,"int")==0){
+
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                        }
                      }else{
-                       fprintf(file,"\tmov rax,[%s]\n",root->right->value);
+                        Variable *var=search_global(root->right->value);
+                       if(var){
+
+                          if(strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,[%s]\n",root->right->value);
+                          }
+                       }else{
+                          printf("Not found\n");
+                          exit(1);
+                       }
+                       
                      }
                   }else{
                     fprintf(file,"\tpop rax\n");
                   }
-                
-                 fprintf(file,"\tadd [%s],rax\n",root->left->value);
+                  Variable *var=search_global(root->left->value);
+                  if(var){
+                     if(strcmp(var->type,"int")==0){
+                        fprintf(file,"\tadd [%s],eax\n",root->left->value);
+                     }
+                     
+                  }
+                  
                }
               
            }else if(strcmp(root->value,"-=")==0){
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
-               fprintf(file,"\tpop rax\n");
-               fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+               if(strcmp(var->type,"int")==0){
+                  fprintf(file,"\tpop rax\n");
+                  fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+               }
+               
                }else{
-               printf("Not found %s\n",root->value);
-               exit(1);
+               Variable *var=search_global(root->left->value);
+               if(var){
+                   if(strcmp(var->type,"int")==0){
+                     fprintf(file,"\tpop rax\n");
+                     fprintf(file,"\tsub [%s],eax\n",root->left->value);
+                   }
+               }else{
+                  printf("Not found %s\n",root->value);
+                  exit(1);
+               }
+             
+               
                }
            }else if(strcmp(root->value,"*=")==0){
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
                fprintf(file,"\tpop rax\n");
-               fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
-               fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+               if(strcmp(var->type,"int")==0){
+                  fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
+                  fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+               }
+              
                }else{
-               printf("Not found %s\n",root->value);
-               exit(1);
+               Variable *var=search_global(root->left->value);
+               if(var){
+                  fprintf(file,"\tpop rax\n");
+                  if(strcmp(var->type,"int")==0){
+                     fprintf(file,"\timul eax,%s\n",root->left->value);
+                     fprintf(file,"\tmov [%s],eax\n",root->left->value);
+                  }
+               }else{
+                  printf("Not found %s\n",root->value);
+                  exit(1);
+               }
+               
                }
            }else if(strcmp(root->value,"*=")==0){
-               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-               if(var){
-               fprintf(file,"\tpop rax\n");
-               fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
-               fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
-               }else{
-               printf("Not found %s\n",root->value);
-               exit(1);
-               }
+               // Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+               // if(var){
+               // fprintf(file,"\tpop rax\n");
+               // if(strcmp(var->type,"int")==0){
+               //    fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
+               //    fprintf(file,"\tmov QWORD[rbp-%d],eax\n",var->offset);
+               // }
+               
+               // }else{
+                
+               // printf("Not found %s\n",root->value);
+               // exit(1);
+               // }
            }else if(strcmp(root->value,"/=")==0){
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
-               fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-               fprintf(file,"\tpop rbx\n");
-               fprintf(file,"\tidiv rbx\n");
-               fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+               if(strcmp(var->type,"int")==0){
+                  fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                  fprintf(file,"\tpop rbx\n");
+                  fprintf(file,"\tidiv rbx\n");
+                  fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+               }
+               
                }else{
-               printf("Not found %s\n",root->value);
-               exit(1);
+
+                  Variable *var=search_global(root->left->value);
+                  if(var){
+                  
+                     if(strcmp(var->type,"int")==0){
+                        fprintf(file,"\tmov eax,%s\n",root->left->value);
+                        fprintf(file,"\tpop rbx\n");
+                        fprintf(file,"\tidiv rbx\n");
+                        fprintf(file,"\tmov [%s],eax\n",root->left->value);
+                     }
+                  }else{
+                     printf("Not found %s\n",root->value);
+                     exit(1);
+                  }
                }
         }else{
            //so basically pop the last two values pushed on the, and appy this operator on them 
            //and then finally push this result back to the stack
            // popping twice since we know if we have an operator then there must be a left value and a right value
+            
              if(root->left->type==IDENTIFIER && root->right->type==IDENTIFIER){
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
-                fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
-                fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
+                if(right_var){
+
+                   if(strcmp(right_var->type,"int")==0){
+                     fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                   }
+                }
+                
+                if(left_var){
+                  if(strcmp(left_var->type,"int")==0){
+                     fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                   }
+                }
+                
                 
              }else if(root->left->type==IDENTIFIER && root->right->type==INT){
+               
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 if(left_var){
-                  fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
+                   if(strcmp(left_var->type,"int")==0){
+                     fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                   }
+                  
                 }else{
-                  fprintf(file,"\tmov rax,[%s]\n",root->left->value);
+                  Variable *var=search_global(root->left->value);
+                  if(strcmp(var->type,"int")==0){
+                     fprintf(file,"\tmov eax,[%s]\n",root->left->value);
+                  }
+                  
                 }
-                  fprintf(file,"\tmov rbx,%s\n",root->right->value);
+                   
+                  fprintf(file,"\tmov ebx,DWORD %s\n",root->right->value);
                 
              }else if(root->right->type==IDENTIFIER && root->left->type==INT){
                Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                if(right_var){
-                  fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                   if(strcmp(right_var->type,"int")==0){
+                     fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                   }
+                 
                }else{
-                  fprintf(file,"\tmov rbx,[%s]\n",root->right->value);
+                  Variable *var=search_global(root->left->value);
+                  if(strcmp(var->type,"int")==0){
+                     fprintf(file,"\tmov ebx,[%s]\n",root->right->value);
+                  }
+                  // fprintf(file,"\tmov rbx,[%s]\n",root->right->value);
                }
-               fprintf(file,"\tmov rax,%s\n",root->left->value);
+               fprintf(file,"\tmov eax,%s\n",root->left->value);
              }else if(root->right->type==INT && root->left->type==INT){
-                 fprintf(file,"\tmov rbx,%s\n",root->right->value);
-                 fprintf(file,"\tmov rax,%s\n",root->left->value);
+                 fprintf(file,"\tmov ebx,%s\n",root->right->value);
+                 fprintf(file,"\tmov eax,%s\n",root->left->value);
              }else if(root->left->type==OPERATOR){
                if(root->right->type==INT){
-                  fprintf(file,"\tmov rbx,%s",root->right->value);
+                  fprintf(file,"\tmov ebx,%s",root->right->value);
                }else if(root->right->type==IDENTIFIER){
+                 
                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                   if(right_var){
-                     fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                     if(strcmp(right_var->type,"int")==0){
+                        fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                     }
+                    
                   }else{
-                     fprintf(file,"\tmov rbx,[%s]\n",root->right->value);
+                     fprintf(file,"\tmov ebx,[%s]\n",root->right->value);
                   }
                }
                fprintf(file,"\tpop rax\n");
              }
 
-               if(strcmp(root->value,"+")==0) fprintf(file,"\tadd rax,rbx\n");
-               if(strcmp(root->value,"-")==0) fprintf(file,"\tsub rax,rbx\n");
-               if(strcmp(root->value,"*")==0) fprintf(file,"\timul rax,rbx\n");
+               if(strcmp(root->value,"+")==0) fprintf(file,"\tadd eax,ebx\n");
+               if(strcmp(root->value,"-")==0) fprintf(file,"\tsub eax,ebx\n");
+               if(strcmp(root->value,"*")==0) fprintf(file,"\timul eax,ebx\n");
          
-               if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv rbx\n");
+               if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv ebx\n");
                fprintf(file,"\tpush rax\n");
         }
           
@@ -815,9 +945,16 @@ void traverse(Node *root, FILE *file) {
           if(root->left->type==IDENTIFIER){
             Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
             if(var){
-               fprintf(file,"\tmov rdi,QWORD[rbp-%d]\n",var->offset);
+               if(strcmp(var->type,"int")==0){
+                  fprintf(file,"\tmov edi,[rbp-%d]\n",var->offset);
+               }
+               
             }else{
-               fprintf(file,"\tmov rdi,[%s]\n",root->left->value);
+               Variable *var=search_global(root->left->value);
+               if(strcmp(var->type,"int")==0){
+                  fprintf(file,"\tmov edi,[%s]\n",root->left->value);
+               }
+               
             }
          }else if(root->left->type==INT){
             fprintf(file,"\tmov rdi,%s\n",root->left->value);
@@ -825,7 +962,7 @@ void traverse(Node *root, FILE *file) {
             fprintf(file,"\tpop rdi\n");
          }
            
-          
+
           fprintf(file, "\tmov rax, 60\n"); 
            /*
           We are back from traversing the current scope ,,therefore we need to clean up the stack
@@ -1054,13 +1191,19 @@ void string_to_bytes(Node *node, FILE *file, int label) {
             //call function to print the integer
             if(args){
                 if(args->type==INT){
-                  fprintf(file, "\tmov rdx, %s\n", args->value); 
+                  fprintf(file, "\tmov edx, DWORD %s\n", args->value); 
                 }else if(args->type==IDENTIFIER){
                     Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,args->value);
+                   
                     if(var){
-                        fprintf(file,"\tmov rdx,[rbp-%d]\n",var->offset);
+                     int index_offset=var->offset;
+                     //if there is something on the right then it is an array;
+                       if(args->right){
+                        index_offset=index_offset+(size_of_type(var->type)*atoi(args->right->value));
+                        }
+                        fprintf(file,"\tmov edx,DWORD[rbp-%d]\n",index_offset);
                      }else{
-                        fprintf(file,"\tmov rdx,[%s]\n",args->value);
+                        fprintf(file,"\tmov edx,DWORD[%s]\n",args->value);
                      }
                 }
                
@@ -1208,7 +1351,17 @@ void generate_global_variables(Node *root,FILE *file){
          if(root->left->right ){
 
             if(root->left->right->type==INT){
-              fprintf(file,"\tmov QWORD[%s],%s\n",root->left->left->value,root->left->right->value);
+               Variable *var=search_global(root->left->left->value);
+               if(var){
+                  if(strcmp(var->type,"int")==0){
+                     
+                     fprintf(file,"\tmov DWORD[%s],%s\n",root->left->left->value,root->left->right->value);
+                  }
+                  
+               }else{
+                  
+               }
+              
             }else if(root->left->right->type==IDENTIFIER){
                fprintf(file,"\tmov rax,QWORD[%s]\n",root->left->right->value);
                fprintf(file,"\tmov QWORD[%s],rax\n",root->left->left->value);
@@ -1246,8 +1399,9 @@ void code_generator(Node *root){
     code generation starts from top to bottom ,so we need to reverse the stack
     to bring the scopes in a correct order of how they will be processed
   */
+  
   reverse_codegen_stack(&code_gen_stack);
-  pop_scope(&code_gen_stack);
+   
   function(root,file);
   print_number(file);
   print_char(file);

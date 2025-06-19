@@ -7,10 +7,41 @@ _start:
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 28
-	mov QWORD[rbp-8],2
-	mov QWORD[rbp-4],2
+	sub rsp, 16
+	mov DWORD[rbp-4],3
+	mov DWORD[rbp-8],4
+	INC DWORD[rbp-4]
+	mov eax,DWORD[rbp-4]
+	mov DWORD[rbp-12],eax
+	jmp .after0
+.msg0: db 107,58
+.len0: equ $-.msg0
+.after0:
+	mov rax,1
 	mov rdi,1
+	lea rsi,[rel .msg0]
+	mov rdx,.len0
+	syscall
+	mov edx,DWORD[rbp-12]
+	call print_int
+	jmp .after1
+.msg1: db 10
+.len1 equ $-.msg1
+.after1:
+	mov rax, 1
+	mov rdi, 1
+	lea rsi, [rel .msg1]
+	mov rdx, .len1
+	syscall
+	mov eax,DWORD[rbp-8]
+	mov ebx,DWORD 2
+	add eax,ebx
+	push rax
+	mov ebx,DWORD[rbp-12]
+	pop rax
+	add eax,ebx
+	push rax
+	pop rdi
 	mov rax, 60
 	mov rsp, rbp
 	pop rbp

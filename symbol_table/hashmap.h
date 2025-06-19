@@ -81,6 +81,7 @@ typedef struct {
 Table *create_table(void);
 
 void print_codegen_variables(void);
+unsigned int hash(const char *key); 
 void hashmap_insert(HashMap *map, const char *key, Variable *value);
 Variable *hashmap_get(HashMap *map, const char *key);
 void clear_hashmap(HashMap *map) ;

@@ -8,6 +8,8 @@
 
 //The table will be global to track functions
 FunctionTable *function_table;
+//global variables
+Table *global_scope_table;
 
 //A helper function to calculte the size of data types i.e int=4,char=1,double=8,float=4,,and I am gonna just have default as 4
 size_t size_of_type(const char *type) {
@@ -127,14 +129,16 @@ Node *do_while_loop(Node *node,Token **current_token_ptr){
        
         while(strcmp(token->value,"}")!=0){
            if(strcmp(token->value,"int")==0){
-            
-             node=create_variables(node,&token);
-            
+             node=create_variables(node,&token,false);
            }else if(token->type==IDENTIFIER){
-             node=handle_variable_reassignment(node,&token);
+             if(strcmp((token+1)->value,"++")==0){
+               node=postfix_prefix(node,&token);
+             }else{
+              node=handle_variable_reassignment(node,&token);
+             }
+             
            }else if(strcmp(token->value,"if")==0){
               node=if_statement_generation(node,&token);
-
            }else if(strcmp(token->value,"while")==0){
              node=while_statement_generation(node,&token);
              
@@ -142,6 +146,8 @@ Node *do_while_loop(Node *node,Token **current_token_ptr){
              node=do_while_loop(node,&token);
            }else if(strcmp(token->value,"EOF")==0){
               end_of_tokens_error(token->line_num);
+           }else if(strcmp(token->value,"printf")==0){
+              node=handle_writing_to_the_console(node,&token);
            }
 
         }
@@ -358,12 +364,12 @@ Node *create_function(Node *node,Token **current_token_ptr){
         node=open_curly_node;
         token++;
         while(strcmp(token->value,"return")!=0){
-           
+          
           if(strcmp(token->value,"int")==0 || strcmp(token->value,"char")==0){
-             node=create_variables(node,&token);
+             node=create_variables(node,&token,false);
           }else if(token->type==IDENTIFIER){
             if(strcmp((token+1)->value,"++")==0 || strcmp((token+1)->value,"--")==0){
-               
+             
               node=postfix_prefix(node,&token);
               
             }else if(strcmp((token+1)->value,"(")==0){
@@ -382,6 +388,8 @@ Node *create_function(Node *node,Token **current_token_ptr){
              node=do_while_loop(node,&token);
           }else if(strcmp(token->value,"printf")==0){
              node=handle_writing_to_the_console(node,&token);
+          }else if(strcmp(token->value,"--")==0||strcmp(token->value,"++")==0){
+            node=postfix_prefix(node,&token);
           }
         }
 
@@ -447,10 +455,9 @@ Node *create_function(Node *node,Token **current_token_ptr){
 //parse primary expression.
 Node *parse_primary(Token **current_token_ptr){
     Token *token=*current_token_ptr;
-    
+     
      if(token->type==IDENTIFIER){
         //get the current scope, then get the variable
-        
         Variable *variable=search_variable(&scope_stack,token->value);
         
         if(variable==NULL){
@@ -651,8 +658,6 @@ void handle_comments(Token **current_token_ptr){
               if(token->type==INT){
                   Node *array_size=initialize_node(token->value,token->type);
                   open_square_brackets->left=array_size;
-                   
-               
                   table_insert_variable(current_scope(&scope_stack),(token-2)->value,(token-3)->value,token->line_num,size_of_type((token-3)->value)*atoi((token->value)));
                   table_insert_variable(current_scope(&code_gen_stack),(token-2)->value,(token-3)->value,token->line_num,size_of_type((token-3)->value)*atoi((token->value)));
                   token++;
@@ -750,12 +755,24 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
                args=initialize_node(token->value,token->type);
               string_node->left=args;
               token++;
+              //it might be an array
+              if(strcmp(token->value,"[")==0){
+                 token++;
+                 if(token->type==INT){
+                    Node *array_size=initialize_node(token->value,token->type);
+                    args->right=array_size;
+                    token+=2;
+                 }else{
+                   missing_token_error("integer ",*(token-1));
+                 }
+              }
             }
             
              
 
               while(strcmp(token->value,")")!=0){
                 if(token->type==INT || token->type==IDENTIFIER){
+                 
                   Node *int_node=initialize_node(token->value,token->type);
                   args->left=int_node;
                   args=int_node;
@@ -781,9 +798,7 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
       }
       if(strcmp(token->value,";")==0){
         Node *semi_colon_node=initialize_node(token->value,token->type);
-        if(semi_colon_node->left){
-           printf("Here\n");
-        }
+        
         print_node->right=semi_colon_node;
         token++;
       }else{
@@ -802,8 +817,7 @@ Node *handle_writing_to_the_console(Node *node,Token **current_token_ptr){
 
 //create variables
 
-Node *create_variables(Node *current,Token **current_token_ptr){
-    
+Node *create_variables(Node *current,Token **current_token_ptr,bool is_global){
     Token *token=*current_token_ptr;
     Node *var_node=initialize_node(token->value,token->type);
     //variable type i.e int,char ,float etc....
@@ -831,8 +845,13 @@ Node *create_variables(Node *current,Token **current_token_ptr){
           var_node->value="DECLARATION";
           Node *identifier_node=initialize_node((token-1)->value,(token-1)->type);
           var_node->left=identifier_node;
-          table_insert_variable(current_scope(&scope_stack),(token-1)->value, type, token->line_num, size_of_type(type));
-          table_insert_variable(current_scope(&code_gen_stack),(token-1)->value, type, token->line_num, size_of_type(type));
+          if(is_global){
+            table_insert_variable(global_scope_table,(token-1)->value, type, token->line_num,0);
+          }else{
+
+            table_insert_variable(current_scope(&scope_stack),(token-1)->value, type, token->line_num, size_of_type(type));
+            table_insert_variable(current_scope(&code_gen_stack),(token-1)->value, type, token->line_num, size_of_type(type));
+          }
           Node *semi_colon_node=initialize_node(token->value,token->type);
           var_node->right=semi_colon_node;
           token++;
@@ -868,9 +887,13 @@ Node *create_variables(Node *current,Token **current_token_ptr){
           exit(1);  
        }
        
+       if(is_global){
+         table_insert_variable(global_scope_table,identifier_name,type,token->line_num,0);
+       }else{
+        table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
+        table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
+       }
        
-       table_insert_variable(current_scope(&scope_stack),identifier_name, type, token->line_num, size_of_type(type));
-       table_insert_variable(current_scope(&code_gen_stack), identifier_name, type, token->line_num, size_of_type(type));
         
        operator_node->left=identifier_node;
        
@@ -940,6 +963,7 @@ Node *postfix_prefix(Node *node,Token **current_token_ptr){
   If we are in here ,it is no doubt that we have x++, not sure about the terminating semi colon so that is the only thing that we will check for
 
   */
+  
   Node *variable_node=initialize_node("POSTPREFIX",token->type);
   node->left=variable_node;
   Node *var_node=initialize_node(token->value,token->type);
@@ -1279,7 +1303,7 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                         
                       }else if (strcmp(token->value,"int")==0){
                         
-                        node=create_variables(node,&token);
+                        node=create_variables(node,&token,false);
                        
                       }else if(strcmp(token->value,"while")==0){
                          node=while_statement_generation(node,&token);
@@ -1412,7 +1436,7 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                       if(token->type==IDENTIFIER){
                         node=handle_variable_reassignment(node,&token);
                       }else if (strcmp(token->value,"int")==0){
-                        node=create_variables(node,&token);
+                        node=create_variables(node,&token,false);
                       }else if(strcmp(token->value,"while")==0){
                         node=while_statement_generation(node,&token);
                       }else if(strcmp(token->value,"if")==0){
@@ -1455,7 +1479,7 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                                   
                               }else if(strcmp(token->value,"int")==0){
                                  
-                                node=create_variables(node,&token);
+                                node=create_variables(node,&token,false);
                                 
                               }else if(strcmp(token->value,"while")==0){
                                  node=while_statement_generation(node,&token);
@@ -1520,10 +1544,10 @@ Node *parser(Token *tokens) {
          Since I cannot have one table pointed to by the two scopes(in this case a change in one table affects the other )
          I will have two tables ,in different memory locations
        */
-      Table *global_scope_table=create_table();
-      Table *global_codegen_table=create_table();
-      push_scope(&scope_stack,global_scope_table);
-      push_scope(&code_gen_stack,global_codegen_table);
+      global_scope_table=create_table();
+      // Table *global_codegen_table=create_table();
+      // push_scope(&scope_stack,global_scope_table);
+      // push_scope(&code_gen_stack,global_codegen_table);
       current=root;
     
     while(strcmp(current_token->value,"EOF")){
@@ -1543,7 +1567,7 @@ Node *parser(Token *tokens) {
                 call the create_function function 
                */
               
-               current=create_variables(current,&current_token);
+               current=create_variables(current,&current_token,true);
               
                
            }else if (strcmp(current_token->value,"if")==0){
@@ -1640,4 +1664,46 @@ void free_nodes(Node *node){
    free(node->value);
   //  free(node->type);
    free(node);
+}
+
+
+
+
+// void print__variables(void) {
+    
+//   if (code_gen_stack.top < 0) {
+//       printf("Code generation stack is empty!\n");
+//       return;
+//   }
+//   // reverse_codegen_stack(&code_gen_stack);
+
+//   // Table *top_table = code_gen_stack.tables[code_gen_stack.top];  
+//   HashMap *map = global_scope_table->map;  
+
+//   printf("Variables in top code generation scope:\n");
+
+//   for (int i = 0; i < TABLE_SIZE; i++) {
+//       Entry *entry = map->buckets[i];
+//       while (entry) {
+         
+//           printf("Name: %s, Type: %s, Offset: %d\n", entry->value->name, entry->value->type, entry->value->offset);
+//           entry = entry->next;
+//       }
+//   }
+// }
+
+
+
+
+Variable *search_global( const char *key) {
+  HashMap *map=global_scope_table->map;
+  unsigned int index = hash(key);
+  Entry *entry = map->buckets[index];
+  while (entry != NULL){
+       
+      if (strcmp(entry->key, key) == 0) {
+          return entry->value;
+      }
+  }
+  return NULL;
 }

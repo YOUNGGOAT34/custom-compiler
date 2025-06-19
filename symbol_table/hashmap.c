@@ -106,7 +106,7 @@ Table *create_table(void) {
         table->map->buckets[i] = NULL;
     }
 
-    table->current_offset = 8;
+    table->current_offset = 4;
     return table;
 }
 
@@ -123,7 +123,6 @@ void hashmap_insert(HashMap *map, const char *key, Variable *value) {
 
 
 
-
 }
 
 void table_insert_variable(Table *table, const char *name, const char *type, size_t line_number, size_t size_of_type) {
@@ -137,8 +136,15 @@ void table_insert_variable(Table *table, const char *name, const char *type, siz
     var->name = strdup(name);
     var->type = strdup(type);
     var->line_number = line_number;
-    var->offset =table->current_offset;
-    table->current_offset += size_of_type;
+    
+    if(size_of_type==0){
+        var->offset =0;
+        table->current_offset=0;
+    }else{
+        var->offset =table->current_offset;
+        table->current_offset += size_of_type;
+    }
+    
    
 
     hashmap_insert(table->map, name, var);
@@ -151,7 +157,7 @@ Variable *hashmap_get(HashMap *map, const char *key) {
    
     unsigned int index = hash(key);
     Entry *entry = map->buckets[index];
-    while (entry != NULL) {
+    while (entry != NULL){
          
         if (strcmp(entry->key, key) == 0) {
             return entry->value;
@@ -168,7 +174,7 @@ void clear_hashmap(HashMap *map) {
             Entry *temp = entry;
             entry = entry->next;
             free(temp->key);
-            free(temp); // Free the Entry
+            free(temp);
         }
     }
     free(map); 
