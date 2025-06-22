@@ -6,8 +6,14 @@ static int if_label_counter=0;
 static int while_label_counter=0;
 static int do_while_label_counter=0;
 static int in_line_label=0;
+
+Node *parent=NULL;
+char *type;
+bool is_return=false;
+Table *scope;
 //while statement code generation
 void while_statement(Node *root,FILE *file){
+  
     char start_loop[64],end_loop [64];
     int label_counter=while_label_counter++;
     sprintf(start_loop,"while%d",label_counter);
@@ -75,9 +81,10 @@ void while_statement(Node *root,FILE *file){
          exit(1);
       }
       
-      traverse(code_block,file);
+      preoder_traversal(code_block,file);
       
       fprintf(file,"\tjmp %s\n",start_loop);
+      
       fprintf(file,"%s:\n",end_loop);
       //after this we wanna traverse whatever follows the while loop,on its right.
       /*
@@ -85,9 +92,9 @@ void while_statement(Node *root,FILE *file){
          { } ,to the left of { we had the code block,,and the code that follows this while loop will be atteched to } that is why we need to traverse this part,
             to avoid returning and leaving it ungenerated
       */
-      traverse(root->left->right->right,file);
-
-      return;
+      
+      preoder_traversal(root->left->right->right,file);
+     
    }
 
 //if statement code generation
@@ -194,23 +201,24 @@ void if_statement(Node *root,FILE *file){
    
 
    //traverse the code block 
-  
-   traverse(code_block->left,file);
-
+   // printf("%s\n",code_block->right->value);
+   preoder_traversal(code_block->left,file);
+   
    fprintf(file, "\tjmp %s\n", end_label);
    //I don't really need the else label if there is no else block
    if(else_block){
       
       fprintf(file, "%s:\n", else_label);
-      traverse(else_block->left,file);
+      preoder_traversal(else_block->left,file);
    } 
       
    
    fprintf(file, "%s:\n",end_label);
    if(else_block){
-      traverse(else_block->right,file);
+      preoder_traversal(else_block->right,file);
    }else{
-      traverse(code_block->right,file);
+      
+      preoder_traversal(code_block->right,file);
    }
   
   
@@ -239,7 +247,7 @@ void do_while(Node *root,FILE *file){
     Node *lhs=condition->left;
     Node *rhs=condition->right;
     fprintf(file,"%s:\n",start_loop);
-    traverse(code_block,file);
+    preoder_traversal(code_block,file);
     /*after generating the body ,we need to take care of the condition and determine whether we will continue looping or not
     mov lhs into rax
     mov rhs ito rbx
@@ -281,7 +289,7 @@ void do_while(Node *root,FILE *file){
    fprintf(file,"\tjmp %s\n",start_loop);
    fprintf(file,"%s:\n",end_loop);
    //We don't wanna stop here ,traverse the rest of the subtrees
-   traverse(root->right,file);
+   preoder_traversal(root->right,file);
 }
 /*
    Just for global variables ,
@@ -451,7 +459,7 @@ void handle_unary_assignment(Node *root,FILE *file){
     }
     
 
-   traverse(root->right,file);
+   preoder_traversal(root->right,file);
 }
 
 /*
@@ -465,26 +473,68 @@ void postfix_prefix_statement(Node *root,FILE *file){
       if(var){
         
          if(strcmp(root->left->left->value,"++")==0){
-            fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+            if(strcmp(var->type,"int")==0){
+               fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+            }
+            
          }else if(strcmp(root->left->left->value,"--")==0){
-            fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+            if(strcmp(var->type,"int")==0){
+               fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+            }
+            
          }
          
+      }else{
+          Variable *global_var=search_global(root->left->value);
+          if(global_var){
+            if(strcmp(root->left->left->value,"++")==0){
+               if(strcmp(global_var->type,"int")==0){
+                  fprintf(file,"\tINC DWORD[%s]\n",global_var->name);
+               }
+               
+            }else if(strcmp(root->left->left->value,"--")==0){
+
+               if(strcmp(global_var->type,"int")==0){
+                  fprintf(file,"\tDEC DWORD[%s]\n",global_var->name);
+               }
+            }
+          }
       }
    }else if(root->left->type==OPERATOR){
       Variable *var=search_variable(&code_gen_stack,root->left->left->value);
       if(var){
         
          if(strcmp(root->left->value,"++")==0){
-            fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+            if(strcmp(var->type,"int")==0){
+
+               fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+            }
          }else if(strcmp(root->left->value,"--")==0){
-            fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+            if(strcmp(var->type,"int")==0){
+
+               fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+            }
          }
          
+      }else{
+          Variable *global_var=search_global(root->left->left->value);
+          if(global_var){
+            if(strcmp(root->left->value,"++")==0){
+               if(strcmp(global_var->type,"int")==0){
+   
+                  fprintf(file,"\tINC DWORD[%s]\n",global_var->name);
+               }
+            }else if(strcmp(root->left->value,"--")==0){
+               if(strcmp(global_var->type,"int")==0){
+            
+                  fprintf(file,"\tDEC DWORD[%s]\n",global_var->name);
+               }
+            }
+          }
       }
    }
 
-   traverse(root->right,file);
+   // preoder_traversal(root->right,file);
 }
 
 /*
@@ -510,350 +560,549 @@ void array_initialization(Node *root,FILE *file){
     }
    
      
-    traverse(root->right,file);
+   //  preoder_traversal(root->right,file);
 }
 void initialization(Node *root,FILE *file){
     if(!root) return;
-     
+    
 
     Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
            if(var){
-             
-             
              if(strcmp(root->left->value,"=")==0){
-
+              
                 if(root->left->right->type==INT){
-                  fprintf(file,"\tmov DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                   if(strcmp(var->type,"int")==0){
+                     fprintf(file,"\tmov DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                   }
+                  
                 }else if(root->left->right->type==IDENTIFIER){
                    Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                    if(right_var){
-                     
-                      fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                      fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                      if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                      }
+                      
                    }else{
+                     Variable *gloabl_var=search_global(root->left->right->value);
+                     if(strcmp(var->type,"int")==0 && strcmp(gloabl_var->type,"int")==0){
+                        fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     }
                      
-                     fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
-                     fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                    }
+                }else if(root->left->right->type==OPERATOR && strcmp(root->left->right->value,"=")!=0){
+                     
+                       postorder_traversal(root->left->right,file,false,var->type);
+                       if(strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                           fprintf(file,"\tadd rsp,4\n");
+                           fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
+                           
+                       }
                 }
              }else{
                 if(strcmp(root->left->value,"+=")==0){
+                  
                   if(root->left->right->type==INT){
-                     fprintf(file,"\tadd DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     if(strcmp(var->type,"int")==0){
+                        
+                        fprintf(file,"\tadd DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     }
+                     
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                        
-                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                           fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                         }
+                         
                       }else{
-                        fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                        Variable *global_var=search_global(root->left->right->value);
+                        if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                        }
                       }
+                   }else if(root->left->right->type==OPERATOR){
+                       postorder_traversal(root->left->right,file,false,var->type);
+                       if(strcmp(var->type,"int")==0){
+                          fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                          fprintf(file,"\tadd rsp,4\n");
+                          fprintf(file,"\tadd [rbp-%d],eax\n",var->offset);
+
+                       }
                    }
                 }else if(strcmp(root->left->value,"-=")==0){
                   if(root->left->right->type==INT){
-                     fprintf(file,"\tsub DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     
+                     if(strcmp(var->type,"int")==0){
+                        fprintf(file,"\tsub DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     }
+                     
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                        
-                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tsub QWORD[rbp-%d],eax\n",var->offset);
+                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                           fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                         }
+                      
                       }else{
-                        fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                        Variable *global_var=search_global(root->left->right->value);
+                       
+                        if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                        }
+                       
                       }
+                   }else if(root->left->right->type==OPERATOR){
+                       postorder_traversal(root->left->right,file,false,var->type);
+                       if(strcmp(var->type,"int")==0){
+                          fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                          fprintf(file,"\tadd rsp,4\n");
+                          fprintf(file,"\tsub [rbp-%d],eax\n",var->offset);
+                       }
                    }
                 }else if(strcmp(root->left->value,"*=")==0){
                   if(root->left->right->type==INT){
-                        fprintf(file,"mov eax,DWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\timul eax,%s\n",root->left->right->value);
-                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                        if(strcmp(var->type,"int")==0){
+
+                           fprintf(file,"mov eax,DWORD[rbp-%d]\n",var->offset);
+                           fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                        }
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                        
-                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                         fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+
+                            fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                            fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                         }
                       }else{
-                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\timul eax,[%s]\n",root->left->right->value);
-                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                        Variable *global_var=search_global(root->left->right->value);
+                        if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                           fprintf(file,"\timul eax,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                        }
                       }
+                   }else if(root->left->right->type==OPERATOR){
+                        postorder_traversal(root->left->right,file,false,var->type);
+                        if(strcmp(var->type,"int")==0){
+                            fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                            fprintf(file,"\tadd rsp,4\n");
+                            fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
+                            fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
+                        }
                    }
                 }else if(strcmp(root->left->value,"/=")==0){
                   if(root->left->right->type==INT){
-                     fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                     fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
-                     fprintf(file,"\tidiv ebx\n");
-                     fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     if(strcmp(var->type,"int")==0){
+                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                        fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
+                        fprintf(file,"\tidiv ebx\n");
+                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     }
+                   
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
+                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                           fprintf(file,"\tidiv ebx\n");
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                         }
                         
-                         fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
-                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                         fprintf(file,"\tidiv ebx\n");
-                         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                       }else{
+                        Variable *global_var=search_global(root->left->right->value);
+                        if(strcmp(var->type,"int")==0 && strcmp(global_var->type,"int")==0){
+
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                           fprintf(file,"\tmov ebx,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tidiv ebx\n");
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                        }
+                      }
+                   }else if(root->left->right->type==OPERATOR){
+                     postorder_traversal(root->left->right,file,false,var->type);
+                     if(strcmp(var->type,"int")==0){
+    
+                        fprintf(file,"\tmov ebx,DWORD[rsp]\n");
+                        fprintf(file,"\tadd rsp,4\n");
                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\tmov ebx,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tcdq\n");
                         fprintf(file,"\tidiv ebx\n");
                         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
-                      }
+                     }
                    }
                 }
              }
              
-         }
-         traverse(root->right,file);
-
-}
-
-Node *parent=NULL;
-Table *scope;
-void traverse(Node *root, FILE *file) {
-  
-  if (!root) return;
-  
-  if (strcmp(root->value, "if") == 0) {
-   /*
-     We see an if statement ,we call the function to handle if statements
-     We see a while loop ,we call a function to handle while loops
-     We see a for loop, call a function to handle for loops
-     We see a do while loop ,we call a function to handle do while loops
-     otherwise we traverse
-     for loops ,it has to be a preoder traversal to avoid traversing the code inside the loop twice
-   */
-     if_statement(root,file);
-     }else if(strcmp(root->value,"while")==0){
-      while_statement(root,file);
-     }else if(strcmp(root->value,"do")==0){
-         
-         do_while(root,file);
-     }else if(strcmp(root->value,"POSTPREFIX")==0){
-       postfix_prefix_statement(root,file);
-   }else if(strcmp(root->value,"UNARYASSIGNMENT")==0){
-        handle_unary_assignment(root,file);
-   }else if(strcmp(root->value,"int")==0 && root->left->right && strcmp(root->left->right->value,"FUNCTIONCALL")==0){
-       
-        Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
-        if(var){
-
-         fprintf(file,"\tcall %s\n",root->left->right->left->value);
-         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
-        }else{
-           printf("Not found %s\n",root->left->left->value);
-           exit(0);
-        }
-        
-        traverse(root->right,file);
-       
-        
-    }else if((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 ) && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || root->left->right->type==IDENTIFIER) && root->left->left){
-         
-       initialization(root,file); 
-   }else if(strcmp(root->value,"printf")==0){
-        write_to_console(root,file);
-   }else if(strcmp(root->value,"char")==0){
-      
-      Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
-      if(var){
-         fprintf(file,"\tmov BYTE[rbp-%d],%s\n",var->offset,root->left->right->value);
-
-      }
-      traverse(root->right,file);
-   }else if(strcmp(root->value,"ARR_ASSIGN")==0){
-        array_initialization(root,file);
-
-   }else{
-      // Recursively process left and right subtrees first (Post-Order): left->right->root
-      traverse(root->left, file);
-      traverse(root->right, file);
-         if(root->type==INT ){
-         //  fprintf(file,"\tpush QWORD %s\n",root->value);
-          }else if(root->type==OPERATOR){
-            //if it is an =,+=,-=,/=,*= sign then the value that is top of the stack is the computation of the left subtree.
-           if(strcmp(root->value,"=")==0){
-              
-              Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-              if(var){
-                if(strcmp(var->type,"int")==0){
-                  fprintf(file,"pop rax\n");
-                  fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
-                }
-                
-              }else{
-                Variable *var=search_global(root->left->value);
-                 if(var){
-                  if(strcmp(var->type,"int")==0){
-
-                     fprintf(file,"\tpop rax\n");
-                     fprintf(file,"\tmov DWORD [%s],eax\n",root->left->value);
-                  }else{
-                      printf("Not found\n");
-                      exit(1);
-                  }
-                 }
-                
-              }
+         }else{
+            //if the value wasn't in any scope then it has to be in the global scope
+            Variable *var=search_global(root->left->left->value);
+             
+            if(var){
                
-           }else if(strcmp(root->value,"+=")==0){
-              
-               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-               if(var){
-                if(root->right->type==IDENTIFIER){
-                  
-                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
-                   if(right_var){
-                      if(strcmp(right_var->type,"int")==0){
-                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                      }
-                      
-                   }else{
-                     Variable *var=search_global(root->left->value);
+             
+               if(strcmp(root->left->value,"=")==0){
+  
+                  if(root->left->right->type==INT){
                      if(strcmp(var->type,"int")==0){
-                       
-                        fprintf(file,"\tmov eax,DWORD[%s]\n",root->right->value);
-                     }else{
-                         printf("Not found\n");
-                         exit(1);
+                       fprintf(file,"\tmov DWORD[%s],%s\n",var->name,root->left->right->value);
                      }
-                     
-                   }
-                }else{
-                  fprintf(file,"\tpop rax\n");
-                }
-              
-               fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
-               }else{
-                  if(root->right->type==IDENTIFIER){
-                     
-                     Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
+                    
+                  }else if(root->left->right->type==IDENTIFIER){
+                     Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                      if(right_var){
-                        if(strcmp(right_var->type,"int")==0){
-
-                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                        if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                          fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                          fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
                         }
+                        
                      }else{
-                        Variable *var=search_global(root->right->value);
-                       if(var){
-
-                          if(strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,[%s]\n",root->right->value);
-                          }
-                       }else{
-                          printf("Not found\n");
-                          exit(1);
+                       Variable *gloabl_var=search_global(root->left->right->value);
+                       if(strcmp(var->type,"int")==0 && strcmp(gloabl_var->type,"int")==0){
+                          fprintf(file,"\tmov eax,[%s]\n",gloabl_var->name);
+                          fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
                        }
                        
                      }
-                  }else{
-                    fprintf(file,"\tpop rax\n");
+                  }else if(root->left->right->type==OPERATOR){
+                      postorder_traversal(root->left->right,file,false,var->type);
+                      fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                      fprintf(file,"\tadd rsp,4\n");
+                      fprintf(file,"\tmov [%s],eax\n",var->name);
                   }
-                  Variable *var=search_global(root->left->value);
-                  if(var){
-                     if(strcmp(var->type,"int")==0){
-                        fprintf(file,"\tadd [%s],eax\n",root->left->value);
-                     }
+               }else{
+                  if(strcmp(root->left->value,"+=")==0){
                      
+                    if(root->left->right->type==INT){
+                     
+                       if(strcmp(var->type,"int")==0){
+                      
+                          fprintf(file,"\tadd DWORD[%s],%s\n",var->name,root->left->right->value);
+                       }
+                       
+                     }else if(root->left->right->type==IDENTIFIER){
+                        
+                        Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                        if(right_var){
+                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                             fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                             fprintf(file,"\tadd [%s],eax\n",var->name);
+                           }
+                           
+                        }else{
+                           
+                          Variable *global_var=search_global(root->left->right->value);
+                          if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                             fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                             fprintf(file,"\tadd [%s],eax\n",var->name);
+                          }
+                        }
+                     }else if(root->left->right->type==OPERATOR){
+                              postorder_traversal(root->left->right,file,false,var->type);
+                             fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                             fprintf(file,"\tadd rsp,4\n");
+                             fprintf(file,"\tadd [%s],eax\n",var->name);
+                     }
+                  }else if(strcmp(root->left->value,"-=")==0){
+                   
+                    if(root->left->right->type==INT){
+                       
+                       if(strcmp(var->type,"int")==0){
+                          fprintf(file,"\tsub DWORD[%s],%s\n",var->name,root->left->right->value);
+                       }
+                       
+                     }else if(root->left->right->type==IDENTIFIER){
+                        Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                        if(right_var){
+                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                             fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                             fprintf(file,"\tsub DWORD[%s],eax\n",var->name);
+                           }
+                        
+                        }else{
+                          Variable *global_var=search_global(root->left->right->value);
+                         
+                          if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                             fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                             fprintf(file,"\tsub DWORD[%s],eax\n",var->name);
+                          }
+                         
+                        }
+                     }else if(root->left->right->type==OPERATOR){
+                           postorder_traversal(root->left->right,file,false,var->type);
+                           if(strcmp(var->type,"int")==0){
+                               fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                               fprintf(file,"\tadd rsp,4\n");
+                               fprintf(file,"\tsub [%s],eax\n",var->name);
+
+                           }
+                     }
+                  }else if(strcmp(root->left->value,"*=")==0){
+                    if(root->left->right->type==INT){
+                          if(strcmp(var->type,"int")==0){
+                             fprintf(file,"mov eax,DWORD[%s]\n",var->name);
+                             fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                          }
+                     }else if(root->left->right->type==IDENTIFIER){
+                        Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                        if(right_var){
+                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+  
+                              fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                              fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                              fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                           }
+                        }else{
+                          Variable *global_var=search_global(root->left->right->value);
+                          if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+  
+                             fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                             fprintf(file,"\timul eax,[%s]\n",root->left->right->value);
+                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                          }
+                        }
+                     }else if(root->left->right->type==OPERATOR){
+                          postorder_traversal(root->left->right,file,false,var->type);
+                          if(strcmp(var->type,"int")==0){
+                           fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                           fprintf(file,"\tadd rsp,4\n");
+                           fprintf(file,"\timul eax,[%s]\n",var->name);
+                           fprintf(file,"\tmov [%s],eax\n",var->name);
+                          }
+                          
+                     }
+                  }else if(strcmp(root->left->value,"/=")==0){
+                    if(root->left->right->type==INT){
+                       if(strcmp(var->type,"int")==0){
+                          fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                          fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
+                          fprintf(file,"\tidiv ebx\n");
+                          fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                       }
+                     
+                     }else if(root->left->right->type==IDENTIFIER){
+                        Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
+                        if(right_var){
+                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                             fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                             fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                             fprintf(file,"\tidiv ebx\n");
+                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                           }
+                          
+                        }else{
+                          Variable *global_var=search_global(root->left->right->value);
+                          if(strcmp(var->type,"int")==0 && strcmp(global_var->type,"int")==0){
+  
+                             fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                             fprintf(file,"\tmov ebx,[%s]\n",root->left->right->value);
+                             fprintf(file,"\tidiv ebx\n");
+                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                          }
+                        }
+                     }else if(root->left->right->type==OPERATOR){
+                          postorder_traversal(root->left->right,file,false,var->type);
+                          if(strcmp(var->type,"int")==0){
+
+                             fprintf(file,"\tmov ebx,DWORD[rsp]\n");
+                             fprintf(file,"\tadd rsp,4\n");
+                             fprintf(file,"\tmov eax,[%s]\n",var->name);
+                             fprintf(file,"\tidiv ebx\n");
+                             fprintf(file,"\tmov [%s],eax\n",var->name);
+                          }
+                     }
                   }
-                  
                }
+            }
+         }
+
+}
+
+
+
+void preoder_traversal(Node *root,FILE *file){
+   if(!root) return;
+   
+   if (strcmp(root->value, "if") == 0){
+      /*
+        We see an if statement ,we call the function to handle if statements
+        We see a while loop ,we call a function to handle while loops
+        We see a for loop, call a function to handle for loops
+        We see a do while loop ,we call a function to handle do while loops
+        otherwise we traverse
+        for loops ,it has to be a preoder traversal to avoid traversing the code inside the loop twice
+      */
+        if_statement(root,file);
+        return;
+        }else if(strcmp(root->value,"while")==0){
+         
+         while_statement(root,file);
+         return;
+        }else if(strcmp(root->value,"do")==0){
+            
+            do_while(root,file);
+            return;
+        }else if(strcmp(root->value,"POSTPREFIX")==0){
+          postfix_prefix_statement(root,file);
+      }else if(strcmp(root->value,"UNARYASSIGNMENT")==0){
+           handle_unary_assignment(root,file);
+      }else if(strcmp(root->value,"int")==0 && root->left->right && strcmp(root->left->right->value,"FUNCTIONCALL")==0){
+           Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
+           if(var){
+           
+            fprintf(file,"\tcall %s\n",root->left->right->left->value);
+            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+           }else{
+              printf("Not found %s\n",root->left->left->value);
+              exit(0);
+           }
+           
+         //   preoder_traversal(root->right,file);
+          
+           
+       }else if((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 ) && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || root->left->right->type==IDENTIFIER || root->left->right->type==OPERATOR) && root->left->left){
+        
+          initialization(root,file); 
+      }else if(strcmp(root->value,"printf")==0){
+           write_to_console(root,file);
+      }else if(strcmp(root->value,"char")==0){
+         
+         Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
+         if(var){
+            fprintf(file,"\tmov BYTE[rbp-%d],%s\n",var->offset,root->left->right->value);
+   
+         }
+         // main_traverse(root->right,file);
+         
+      }else if(strcmp(root->value,"ARR_ASSIGN")==0){
+           array_initialization(root,file);
+   
+      }else if(strcmp(root->value,"return")==0 && parent && strcmp(parent->value,"main")==0){
+            
+            /*If the execution got into the main function's return statement it means we will exit the program with the return value as the exit code.
+            If the return value is an integer then we move it to rdi
+            If the return value is an identifier ,then we move the value at that memory location into rdi i.e mov rdi,[identifer]
+            */
+           //  if(root->left->type==IDENTIFIER && strcmp(tok))
+            if(root->left->type==IDENTIFIER){
+              Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
+              if(var){
+                 if(strcmp(var->type,"int")==0){
+                    fprintf(file,"\tmov edi,[rbp-%d]\n",var->offset);
+                 }
+                 
+              }else{
+                 Variable *var=search_global(root->left->value);
+                 if(strcmp(var->type,"int")==0){
+                    fprintf(file,"\tmov edi,[%s]\n",root->left->value);
+                 }
+                 
+              }
+           }else if(root->left->type==INT){
+              if(strcmp(type,"int")==0){
+               fprintf(file,"\tmov edi,%s\n",root->left->value);
+              }
               
-           }else if(strcmp(root->value,"-=")==0){
-               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-               if(var){
-               if(strcmp(var->type,"int")==0){
-                  fprintf(file,"\tpop rax\n");
-                  fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
-               }
-               
-               }else{
-               Variable *var=search_global(root->left->value);
-               if(var){
-                   if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tpop rax\n");
-                     fprintf(file,"\tsub [%s],eax\n",root->left->value);
-                   }
-               }else{
-                  printf("Not found %s\n",root->value);
-                  exit(1);
+           }else if(root->left->type==OPERATOR){
+               if(strcmp(type,"int")==0){
+                  postorder_traversal(root->left,file,true,type);
+                  fprintf(file,"\tmov edi,[rsp]\n");
+                  fprintf(file,"\tadd rsp,4\n");
                }
              
                
-               }
-           }else if(strcmp(root->value,"*=")==0){
+           }
+             
+  
+            fprintf(file, "\tmov rax, 60\n"); 
+             /*
+            We are back from traversing the current scope ,,therefore we need to clean up the stack
+            return stack pinter to point to the current base pointer 
+            and pop the base pointer
+           */
+            fprintf(file, "\tmov rsp, rbp\n"); 
+            fprintf(file, "\tpop rbp\n"); 
+            fprintf(file, "\tsyscall\n");
+         }else if(strcmp(root->value,"return")==0){
+            /*If it is return of another function then we wanna mov into rax the return value then return ,
+            so now we call a function from somewhere we know the return value is in rax,,when we traverse back to return statement
+            it means that we have pushed our return result onto the stack therefore we can pop it into rax
+            and also we wanna restore the stack 
+            A small optimization to make is: if the return value is not an expression we can just move it to rdi ,no pushing it to the stack then popping it into rdi
+           */
+            if(root->left->type==IDENTIFIER){
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
-               fprintf(file,"\tpop rax\n");
-               if(strcmp(var->type,"int")==0){
-                  fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
-                  fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
-               }
-              
-               }else{
-               Variable *var=search_global(root->left->value);
-               if(var){
-                  fprintf(file,"\tpop rax\n");
                   if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\timul eax,%s\n",root->left->value);
-                     fprintf(file,"\tmov [%s],eax\n",root->left->value);
+                     fprintf(file,"\tmov eax,QWORD[rbp-%d]\n",var->offset);
                   }
-               }else{
-                  printf("Not found %s\n",root->value);
-                  exit(1);
-               }
-               
-               }
-           }else if(strcmp(root->value,"*=")==0){
-               // Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-               // if(var){
-               // fprintf(file,"\tpop rax\n");
-               // if(strcmp(var->type,"int")==0){
-               //    fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
-               //    fprintf(file,"\tmov QWORD[rbp-%d],eax\n",var->offset);
-               // }
-               
-               // }else{
-                
-               // printf("Not found %s\n",root->value);
-               // exit(1);
-               // }
-           }else if(strcmp(root->value,"/=")==0){
-               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-               if(var){
-               if(strcmp(var->type,"int")==0){
-                  fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                  fprintf(file,"\tpop rbx\n");
-                  fprintf(file,"\tidiv rbx\n");
-                  fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
-               }
-               
-               }else{
-
-                  Variable *var=search_global(root->left->value);
-                  if(var){
                   
-                     if(strcmp(var->type,"int")==0){
-                        fprintf(file,"\tmov eax,%s\n",root->left->value);
-                        fprintf(file,"\tpop rbx\n");
-                        fprintf(file,"\tidiv rbx\n");
-                        fprintf(file,"\tmov [%s],eax\n",root->left->value);
-                     }
-                  }else{
-                     printf("Not found %s\n",root->value);
-                     exit(1);
-                  }
+               }else{
+                  fprintf(file,"\tmov rax,[%s]\n",root->left->value);
                }
-        }else{
+            }else if(root->left->type==INT){
+               fprintf(file,"\tmov rdi,%s\n",root->left->value);
+            }else{
+               fprintf(file,"\tpop rax\n");
+            }
+           
+            fprintf(file, "\tmov rsp, rbp\n"); 
+            fprintf(file, "\tpop rbp\n"); 
+            fprintf(file, "\tret\n"); 
+          
+       }else if(strcmp(root->value,"ASSIGN")==0){
+         root=root->left;
+    } else if (strcmp(root->value, "exit") == 0) {
+      fprintf(file, "\tpop rdi\n"); // Final result to rdi before exiting
+       fprintf(file, "\tmov rax, 60\n"); // Exit syscall
+      fprintf(file, "\tsyscall\n");
+      
+   }
+
+
+    
+
+      
+      preoder_traversal(root->left,file);
+      preoder_traversal(root->right,file);
+
+
+}
+
+
+
+//traversal helper
+void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) {
+  
+  if (!root) return;
+ 
+      // Recursively process left and right subtrees first (Post-Order): left->right->root
+      postorder_traversal(root->left, file,is_return,data_type);
+      postorder_traversal(root->right, file,is_return,data_type);
+         if(root->type==INT ){
+         //  fprintf(file,"\tpush QWORD %s\n",root->value);
+          }else if(root->type==OPERATOR){
+
+            //if it is an =,+=,-=,/=,*= sign then the value that is top of the stack is the computation of the left subtree.
+         
            //so basically pop the last two values pushed on the, and appy this operator on them 
            //and then finally push this result back to the stack
            // popping twice since we know if we have an operator then there must be a left value and a right value
-            
+             
              if(root->left->type==IDENTIFIER && root->right->type==IDENTIFIER){
+              
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                 if(right_var){
@@ -900,17 +1149,17 @@ void traverse(Node *root, FILE *file) {
                   if(strcmp(var->type,"int")==0){
                      fprintf(file,"\tmov ebx,[%s]\n",root->right->value);
                   }
-                  // fprintf(file,"\tmov rbx,[%s]\n",root->right->value);
+                  
                }
                fprintf(file,"\tmov eax,%s\n",root->left->value);
              }else if(root->right->type==INT && root->left->type==INT){
+               
                  fprintf(file,"\tmov ebx,%s\n",root->right->value);
                  fprintf(file,"\tmov eax,%s\n",root->left->value);
              }else if(root->left->type==OPERATOR){
                if(root->right->type==INT){
-                  fprintf(file,"\tmov ebx,%s",root->right->value);
+                  fprintf(file,"\tmov ebx,%s\n",root->right->value);
                }else if(root->right->type==IDENTIFIER){
-                 
                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                   if(right_var){
                      if(strcmp(right_var->type,"int")==0){
@@ -921,93 +1170,41 @@ void traverse(Node *root, FILE *file) {
                      fprintf(file,"\tmov ebx,[%s]\n",root->right->value);
                   }
                }
-               fprintf(file,"\tpop rax\n");
+                  fprintf(file,"\tmov eax,[rsp]\n");
+                  fprintf(file,"\tadd rsp,4\n");
              }
 
-               if(strcmp(root->value,"+")==0) fprintf(file,"\tadd eax,ebx\n");
+               if(strcmp(root->value,"+")==0)fprintf(file,"\tadd eax,ebx\n");
+
                if(strcmp(root->value,"-")==0) fprintf(file,"\tsub eax,ebx\n");
                if(strcmp(root->value,"*")==0) fprintf(file,"\timul eax,ebx\n");
          
                if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv ebx\n");
-               fprintf(file,"\tpush rax\n");
+               
+               if(is_return){
+                   if(strcmp(type,"int")==0){
+                     fprintf(file,"\tsub rsp,4\n");
+                     fprintf(file,"\tmov [rsp],eax\n");
+                   }
+               }else{
+                   if(strcmp(data_type,"int")==0){
+                        fprintf(file,"\tsub rsp,4\n");
+                        fprintf(file,"\tmov [rsp],eax\n");
+                      
+                   }
+               }
+             
         }
           
     
-       }else if(strcmp(root->value,"ASSIGN")==0){
-            root=root->left;
        }
-       if(strcmp(root->value,"return")==0 && parent && strcmp(parent->value,"main")==0){
-          /*If the execution got into the main function's return statement it means we will exit the program with the return value as the exit code.
-          If the return value is an integer then we move it to rdi
-          If the return value is an identifier ,then we move the value at that memory location into rdi i.e mov rdi,[identifer]
-          */
-         //  if(root->left->type==IDENTIFIER && strcmp(tok))
-          if(root->left->type==IDENTIFIER){
-            Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-            if(var){
-               if(strcmp(var->type,"int")==0){
-                  fprintf(file,"\tmov edi,[rbp-%d]\n",var->offset);
-               }
-               
-            }else{
-               Variable *var=search_global(root->left->value);
-               if(strcmp(var->type,"int")==0){
-                  fprintf(file,"\tmov edi,[%s]\n",root->left->value);
-               }
-               
-            }
-         }else if(root->left->type==INT){
-            fprintf(file,"\tmov rdi,%s\n",root->left->value);
-         }else{
-            fprintf(file,"\tpop rdi\n");
-         }
-           
+       
+     
+   
 
-          fprintf(file, "\tmov rax, 60\n"); 
-           /*
-          We are back from traversing the current scope ,,therefore we need to clean up the stack
-          return stack pinter to point to the current base pointer 
-          and pop the base pointer
-         */
-          fprintf(file, "\tmov rsp, rbp\n"); 
-          fprintf(file, "\tpop rbp\n"); 
-          fprintf(file, "\tsyscall\n");
-       }else if(strcmp(root->value,"return")==0){
-            /*If it is return of another function then we wanna mov into rax the return value then return ,
-            so now we call a function from somewhere we know the return value is in rax,,when we traverse back to return statement
-            it means that we have pushed our return result onto the stack therefore we can pop it into rax
-            and also we wanna restore the stack 
-            A small optimization to make is: if the return value is not an expression we can just move it to rdi ,no pushing it to the stack then popping it into rdi
-           */
-            if(root->left->type==IDENTIFIER){
-               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
-               if(var){
-                  fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
-               }else{
-                  fprintf(file,"\tmov rax,[%s]\n",root->left->value);
-               }
-            }else if(root->left->type==INT){
-               fprintf(file,"\tmov rdi,%s\n",root->left->value);
-            }else{
-               fprintf(file,"\tpop rax\n");
-            }
-           
-            fprintf(file, "\tmov rsp, rbp\n"); 
-            fprintf(file, "\tpop rbp\n"); 
-            fprintf(file, "\tret\n"); 
-          
-       }
-        // Handle exit syscall if root contains "exit"
-      if (strcmp(root->value, "exit") == 0) {
-       fprintf(file, "\tpop rdi\n"); // Final result to rdi before exiting
-        fprintf(file, "\tmov rax, 60\n"); // Exit syscall
-       fprintf(file, "\tsyscall\n");
-       //not checking for the semi colon since the parent is the last to be evaluated ,,post order traversal
-    }
-   }
-}
 
-/*
+
+       /*
  for functions we wanna create a label for each ,corresponding to the function name...i.e 
  main function we create main label:
   main:
@@ -1030,6 +1227,7 @@ void function(Node *root,FILE *file){
        any other function we will create a label from the function name
       
       */
+      type=root->value;
       parent=root->left;
      
       fprintf(file,"%s:\n",root->left->value);
@@ -1044,7 +1242,7 @@ void function(Node *root,FILE *file){
       perror("No active scope\n");
    }
      
-      traverse(root->left,file);
+      preoder_traversal(root->left,file);
       pop_scope(&code_gen_stack);
    }
     
@@ -1328,7 +1526,7 @@ void write_to_console(Node *root, FILE *file) {
     
    }
   
-   traverse(root->right, file);
+   preoder_traversal(root->right, file);
 }
 
 
@@ -1345,31 +1543,10 @@ void generate_global_variables(Node *root,FILE *file){
    It might be a function though.(we don't want to get here)
    */
    if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0){
-      if(root->left->right && root->left->right->type==OPERATOR){
-         traverse(root->left,file);
-      }else{
-         if(root->left->right ){
-
-            if(root->left->right->type==INT){
-               Variable *var=search_global(root->left->left->value);
-               if(var){
-                  if(strcmp(var->type,"int")==0){
-                     
-                     fprintf(file,"\tmov DWORD[%s],%s\n",root->left->left->value,root->left->right->value);
-                  }
-                  
-               }else{
-                  
-               }
-              
-            }else if(root->left->right->type==IDENTIFIER){
-               fprintf(file,"\tmov rax,QWORD[%s]\n",root->left->right->value);
-               fprintf(file,"\tmov QWORD[%s],rax\n",root->left->left->value);
-            }
-         }
+         initialization(root,file);
       }
     
-   }
+
 
    generate_global_variables(root->left,file);
    generate_global_variables(root->right,file);

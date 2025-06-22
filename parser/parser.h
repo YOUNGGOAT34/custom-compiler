@@ -24,6 +24,7 @@ Node *createNode(char *);
 // void print__variables(void) ;
 Variable *search_global( const char *);
 Node *postfix_prefix(Node *,Token **);
+bool check_variable(char *);
 Node *parser(Token *);
 void handle_exit_system(Node *,Token **);
 Node *function_call(Node *,Node *,Token **);

@@ -7,41 +7,47 @@ _start:
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 16
-	mov DWORD[rbp-4],3
-	mov DWORD[rbp-8],4
-	INC DWORD[rbp-4]
-	mov eax,DWORD[rbp-4]
-	mov DWORD[rbp-12],eax
-	jmp .after0
-.msg0: db 107,58
-.len0: equ $-.msg0
-.after0:
-	mov rax,1
-	mov rdi,1
-	lea rsi,[rel .msg0]
-	mov rdx,.len0
-	syscall
-	mov edx,DWORD[rbp-12]
-	call print_int
-	jmp .after1
-.msg1: db 10
-.len1 equ $-.msg1
-.after1:
-	mov rax, 1
-	mov rdi, 1
-	lea rsi, [rel .msg1]
-	mov rdx, .len1
-	syscall
+	sub rsp, 12
+	mov DWORD[rbp-4],0
+	mov DWORD[rbp-8],0
+while0:
+	mov rax, [rbp-4]
+	mov rbx, 2
+	cmp rax,rbx
+	jge end_while0
+	mov DWORD[rbp-8],0
+while1:
+	mov rax, [rbp-8]
+	mov rbx, 3
+	cmp rax,rbx
+	jge end_while1
 	mov eax,DWORD[rbp-8]
-	mov ebx,DWORD 2
+	mov ebx,DWORD 1
 	add eax,ebx
-	push rax
-	mov ebx,DWORD[rbp-12]
-	pop rax
+	sub rsp,4
+	mov [rsp],eax
+	mov eax,DWORD[rsp]
+	add rsp,4
+	mov [rbp-8],eax
+	jmp while1
+end_while1:
+	mov eax,DWORD[rbp-4]
+	mov ebx,DWORD 1
 	add eax,ebx
-	push rax
-	pop rdi
+	sub rsp,4
+	mov [rsp],eax
+	mov eax,DWORD[rsp]
+	add rsp,4
+	mov [rbp-4],eax
+	jmp while0
+end_while0:
+	mov ebx,DWORD[rbp-8]
+	mov eax,DWORD[rbp-4]
+	add eax,ebx
+	sub rsp,4
+	mov [rsp],eax
+	mov edi,[rsp]
+	add rsp,4
 	mov rax, 60
 	mov rsp, rbp
 	pop rbp

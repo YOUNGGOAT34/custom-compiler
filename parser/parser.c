@@ -458,9 +458,9 @@ Node *parse_primary(Token **current_token_ptr){
      
      if(token->type==IDENTIFIER){
         //get the current scope, then get the variable
-        Variable *variable=search_variable(&scope_stack,token->value);
+         
         
-        if(variable==NULL){
+        if(!check_variable(token->value)){
         
           fprintf(stderr, "\033[1;31mError:\033[0m ( %zu): '%s' is not defined \n", token->line_num,token->value);
           exit(1);
@@ -531,9 +531,10 @@ Node *parse_expression(Token **current_token_ptr) {
 
 //function to check if a variableis defined before using it
 bool check_variable(char *name){
-   Variable *var=search_variable(&scope_stack,name);;
-   if(var==NULL) return false;
-
+   Variable *var=search_variable(&scope_stack,name);
+   Variable *global=search_global(name);
+   if(var==NULL && global==NULL) return false;
+   
    return true;
 }
 
@@ -870,11 +871,11 @@ Node *create_variables(Node *current,Token **current_token_ptr,bool is_global){
       */
       Node *operator_node=initialize_node(token->value,token->type);
 
-      if (token->type==OPERATOR){
+      if (token->type==OPERATOR && strcmp(token->value,"=")==0){
         var_node->left=operator_node;
         token--;
        }else{
-        missing_token_error("operator",*(token-1));
+        missing_token_error("=",*(token-1));
        }
 
        Node *identifier_node=initialize_node(token->value,token->type);
@@ -1109,7 +1110,7 @@ Node *handle_variable_reassignment(Node *node,Token **current_token_ptr){
       token--;
       //we go back to the identifier
       if(token->type==IDENTIFIER && !check_variable(token->value)){
-          
+         
         fprintf(stderr, "\033[1;31mError:\033[0m using an undefined variable, '%s' is not defined (line %zu)\n", token->value, token->line_num);
         exit(1);
       }
@@ -1434,7 +1435,12 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                      //at this point we are inside the block {here}
                      while(strcmp(token->value,"}")!=0){
                       if(token->type==IDENTIFIER){
-                        node=handle_variable_reassignment(node,&token);
+                        if((strcmp((token+1)->value,"--")==0 || strcmp((token+1)->value,"++")==0)){
+                            node=postfix_prefix(node,&token);
+                        }else{
+                          node=handle_variable_reassignment(node,&token);
+                        }
+                       
                       }else if (strcmp(token->value,"int")==0){
                         node=create_variables(node,&token,false);
                       }else if(strcmp(token->value,"while")==0){
@@ -1445,6 +1451,8 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                          end_of_tokens_error(token->line_num);
                       }else if(strcmp(token->value,"do")==0){
                           node=do_while_loop(node,&token);
+                      }else if(token->type==OPERATOR && (strcmp(token->value,"++")==0)){
+                         node=postfix_prefix(node,&token);
                       }
                      }
                       if(strcmp(token->value,"}")==0){
@@ -1471,20 +1479,24 @@ Node *if_statement_generation(Node *node,Token **current_token_ptr){
                            
                               //if it is a new variable we create a variabe,,if it is an identifier we update or reuse it
                               if(token->type==IDENTIFIER){
-                                if(!check_variable(token->value)){
-                                  fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined in the current scope (line %zu)\n", token->value, token->line_num);
-                                  exit(1);
+                                if((strcmp((token+1)->value,"--")==0 || strcmp((token+1)->value,"++")==0)){
+                                    node=postfix_prefix(node,&token);
+                                }else{
+                                  node=handle_variable_reassignment(node,&token);
                                 }
-                                 node=handle_variable_reassignment(node,&token);
-                                  
-                              }else if(strcmp(token->value,"int")==0){
-                                 
+                               
+                              }else if (strcmp(token->value,"int")==0){
                                 node=create_variables(node,&token,false);
-                                
                               }else if(strcmp(token->value,"while")==0){
-                                 node=while_statement_generation(node,&token);
+                                node=while_statement_generation(node,&token);
                               }else if(strcmp(token->value,"if")==0){
                                  node=if_statement_generation(node,&token);
+                              }else if(strcmp(token->value,"EOF")==0){
+                                 end_of_tokens_error(token->line_num);
+                              }else if(strcmp(token->value,"do")==0){
+                                  node=do_while_loop(node,&token);
+                              }else if(token->type==OPERATOR && (strcmp(token->value,"++")==0)){
+                                 node=postfix_prefix(node,&token);
                               }
                              
                             }

@@ -17,11 +17,10 @@ int main(void){
         return 1;
     }
   
-
+ 
  
   Token *tokens=lexer(file);
 
-  
   
   //  print_tokens(tokens);
    Node *root= parser(tokens);

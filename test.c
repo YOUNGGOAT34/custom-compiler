@@ -1,13 +1,14 @@
-
-
-int main(){
-  int c=3;
-  int d=4;
+int main() {
+   int i = 0;
+   int j = 0;
+   while (i < 2) {
+       j = 0;
+       while (j < 3) {
+           j = j + 1;
+       }
+       i = i + 1;
+   }
  
-  int k;
-  k=++c;
-  printf("k:%d\n",k);
- 
-   return d+2+k;
+   return i + j;
 }
 
