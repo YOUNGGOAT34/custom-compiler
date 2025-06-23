@@ -30,33 +30,81 @@ void while_statement(Node *root,FILE *file){
      if we have a value ,i.e an integer then we wanna mov the value into a register */
     // Generate code for lhs
     if (lhs->type == IDENTIFIER){
-
-       Variable *var=search_variable(&code_gen_stack,lhs->value);
+     
+     Variable *var=search_variable(&code_gen_stack,lhs->value);
      if(var){
-        fprintf(file, "\tmov rax, [rbp-%d]\n", var->offset);
+        if(strcmp(var->type,"int")==0){
+         fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
+        }
+        
      }else{
-        perror("Not found in while loop\n");
-        exit(1);
+     
+      Variable *global_var=search_global(lhs->value);
+      if(strcmp(global_var->type,"int")==0){
+        
+         fprintf(file, "\tmov eax, DWORD[rel %s]\n", global_var->name);
+        
+      }
      }
-    } else{
-      fprintf(file, "\tmov rax, %s\n", lhs->value);
+
+      //rhs
+      if (rhs->type == IDENTIFIER){
+
+         Variable *right_var=search_variable(&code_gen_stack,rhs->value);
+         if(right_var){
+         if(strcmp(right_var->type,"int")==0){
+            fprintf(file, "\tmov ebx, DWORD[rbp-%d]\n", right_var->offset);
+         }
+         
+         }else{
+            Variable *global_var=search_global(rhs->value);
+            if(strcmp(global_var->type,"int")==0){
+               fprintf(file, "\tmov ebx, DWORD[rel %s]\n", global_var->name);
+            }
+         }
+      } else{
+        
+         if(var){
+            if(strcmp(var->type,"int")==0){
+              
+              fprintf(file, "\tmov ebx, %s\n", rhs->value);
+            }
+         }else{
+             Variable *gloabl_var=search_global(lhs->value);
+             if(strcmp(gloabl_var->type,"int")==0){
+               fprintf(file, "\tmov ebx, %s\n", rhs->value);
+             }
+         }
+         
+      }
+
+
+    }else{
+      if(rhs->type==IDENTIFIER){
+         Variable *right_var=search_variable(&code_gen_stack,rhs->value);
+         if(right_var){
+            if(strcmp(right_var->type,"int")==0){
+               fprintf(file, "\tmov eax, %s\n", lhs->value);
+               fprintf(file, "\tmov ebx, DWORD[rbp-%d]\n", right_var->offset);
+            }
+            
+         }else{
+             Variable *global_var=search_global(rhs->value);
+             if(right_var){
+                 if(strcmp(global_var->type,"int")==0){
+                  fprintf(file, "\tmov eax, %s\n", lhs->value);
+                  fprintf(file, "\tmov ebx, DWORD[rel %s]\n", global_var->name);
+                 }
+             }
+         }
+      }else{
+         //if they are both integer literals treat them as 32-bit size
+          fprintf(file,"\tmov eax,%s\n",lhs->value);
+          fprintf(file,"\tmov ebx,%s\n",rhs->value);
+      }
+      
     }
    
-        
-     
-    // Generate code for rhs
-    if (rhs->type == IDENTIFIER){
-
-      Variable *var=search_variable(&code_gen_stack,rhs->value);
-      if(var){
-       fprintf(file, "\tmov rbx, [rbp-%d]\n", var->offset);
-    }else{
-       perror("Not found in while loop\n");
-       exit(1);
-    }
-      } else{
-         fprintf(file, "\tmov rbx, %s\n", rhs->value);
-      }
       //comparing the rhs and the lhs
       fprintf(file,"\tcmp rax,rbx\n");
       /*
@@ -120,29 +168,83 @@ void if_statement(Node *root,FILE *file){
     Node *rhs=condition->right;
     // Generate code for lhs
     if (lhs->type == IDENTIFIER){
+        
         Variable *var=search_variable(&code_gen_stack,lhs->value);
         if(var){
-         fprintf(file, "\tmov rax, [rbp-%d]\n", var->offset);
+         if(strcmp(var->type,"int")==0){
+            fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
+         }
+         
         }else{
-          perror("Variable not found in the code generation stack\n");
-          exit(1);
+          Variable *global_var=search_global(lhs->value);
+          if(strcmp(global_var->type,"int")==0){
+            fprintf(file, "\tmov eax, DWORD [%s]\n", global_var->name);
+          }
+          
         }
-      }
-    else
-        fprintf(file, "\tmov rax, %s\n", lhs->value);
 
-    // Generate code for rhs
-    if (rhs->type == IDENTIFIER){
-      Variable *var=search_variable(&code_gen_stack,rhs->value);
-      if(var){
-       fprintf(file, "\tmov rbx, [rbp-%d]\n", var->offset);
+          // Generate code for rhs
+        if (rhs->type == IDENTIFIER){
+             Variable *right_var=search_variable(&code_gen_stack,rhs->value);
+         if(right_var){
+            if(strcmp(right_var->type,"int")==0){
+               fprintf(file, "\tmov ebx, DWORD rbp-%d]\n", right_var->offset);
+            }
+         
+         }else{
+            Variable *global_var=search_global(rhs->value);
+            if(global_var){
+                if(strcmp(global_var->type,"int")==0){
+                   fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+
+                }
+            }
+        
+          }
       }else{
-        perror("Variable not found in the code generation stack\n");
-        exit(1);
+         if(var){
+
+            if(strcmp(var->type,"int")==0){
+               fprintf(file,"\tmov ebx,%s\n",rhs->value);
+            }
+         }else{
+            Variable *global_var=search_global(lhs->value);
+            if(global_var){
+
+            if(strcmp(global_var->type,"int")==0){
+               fprintf(file,"\tmov ebx,%s\n",rhs->value);
+            }
+            }
+         }
+       
       }
+    }else{
+       if(rhs->type==IDENTIFIER){
+          Variable *var=search_global(rhs->value);
+          if(var){
+             if(strcmp(var->type,"int")==0){
+                fprintf(file,"\tmov eax,%s\n",lhs->value);
+                fprintf(file,"\tmov ebx,[rel %s]\n",var->name);
+             }
+          }else{
+             Variable *local_var=search_variable(&code_gen_stack,rhs->value);
+             if(local_var){
+                if(strcmp(local_var->type,"int")==0){
+                  fprintf(file,"\tmov eax,%s\n",lhs->value);
+                  fprintf(file,"\tmov ebx,[rbp-%d]\n",local_var->offset);
+                }
+             }
+          }
+       }else{
+             //if both are integers treat them like 32 bit sized types
+            fprintf(file, "\tmov eax, %s\n", lhs->value);
+            fprintf(file, "\tmov ebx, %s\n", rhs->value);
+       }
+      
     }
-    else
-        fprintf(file, "\tmov rbx, %s\n", rhs->value);
+        
+
+  
 
    //since we have the lhs and rhs in rax and rbx respectfully ,now we should do the conditional check (CMP)
    fprintf(file,"\tcmp rax,rbx\n");
@@ -259,16 +361,89 @@ void do_while(Node *root,FILE *file){
        
       if(var){
          if(strcmp(var->type,"int")==0){
-            fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+            fprintf(file,"\tmov eax,DWORD [rbp-%d]\n",var->offset);
          }
+
+         if(rhs->type==INT){
+            if(strcmp(var->type,"int")==0){
+               fprintf(file,"\tmov ebx,%s\n",rhs->value);
+            }
+           
+         }else if(rhs->type==IDENTIFIER){
+             Variable *right_var=search_variable(&code_gen_stack,rhs->value);
+             if(right_var){
+                if(strcmp(right_var->type,"int")==0){
+                   fprintf(file,"\tmov ebx,DWORD [rel %s]\n",right_var->name);
+                }
+             }else{
+               Variable *global_var=search_global(rhs->value);
+               if(global_var){
+                  if(strcmp(global_var->type,"int")==0){
+                     fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                  }
+               }
+             }
+         }
+
+
         
       }else{
+         Variable *global_var=search_global(lhs->value);
+         if(global_var){
+            if(strcmp(global_var->type,"int")==0){
+               fprintf(file,"\tmov eax,DWORD [rel %s]\n",global_var->name);
+            }
+   
+            if(rhs->type==INT){
+               if(strcmp(global_var->type,"int")==0){
+                  fprintf(file,"\tmov ebx,%s\n",rhs->value);
+               }
+              
+            }else if(rhs->type==IDENTIFIER){
+                Variable *right_var=search_variable(&code_gen_stack,rhs->value);
+                if(right_var){
+                   if(strcmp(right_var->type,"int")==0){
+                      fprintf(file,"\tmov ebx,DWORD[rel %s]\n",right_var->name);
+                   }
+                }else{
+                   Variable *global_var=search_global(rhs->value);
+                   if(global_var){
+                      if(strcmp(global_var->type,"int")==0){
+                         fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                      }
+                   }
+                }
+            }
+   
+   
+           
+         }
+      } 
+    }else{
+      if(rhs->type==IDENTIFIER){
+         Variable *right_var=search_variable(&code_gen_stack,rhs->value);
+         if(right_var){
+            if(strcmp(right_var->type,"int")==0){
+              fprintf(file,"\tmov eax,%s\n",lhs->value);
+              fprintf(file,"\tmov ebx,DWORD [rbp-%d]\n",right_var->offset);
+            }
+         }else{
+            Variable *global_var=search_global(rhs->value);
+            if(global_var){
+               if(strcmp(global_var->type,"int")==0){
+                 fprintf(file,"\tmov eax,%s\n",lhs->value);
+                 fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+               }
+            }
+         }
+          
+     }else{
+         //both integers ,make them 32 bit sized by default
          fprintf(file,"\tmov eax,%s\n",lhs->value);
-      }
+         fprintf(file,"\tmov ebx,%s\n",rhs->value);
+     }
     }
-    if(rhs->type==INT){
-       fprintf(file,"\tmov rbx,%s\n",rhs->value);
-    }
+    
     fprintf(file,"\tcmp rax,rbx\n");
     if(strcmp(condition->value,"!=")==0){
       fprintf(file,"\tje %s\n",end_loop);
@@ -351,13 +526,13 @@ void handle_unary_assignment(Node *root,FILE *file){
          }else{
 
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
                fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->value);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
                fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->value);
              }
             
            
@@ -378,13 +553,13 @@ void handle_unary_assignment(Node *root,FILE *file){
              }
          }else{
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
-               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
                fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
                 
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
                fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
              }
            
@@ -400,25 +575,25 @@ void handle_unary_assignment(Node *root,FILE *file){
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
                fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
               
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
                
                fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
                fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
                fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
              }
          }else{
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
               
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
                
                fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->value);
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->value);
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
-               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->value);
              }
          
          }
@@ -431,24 +606,24 @@ void handle_unary_assignment(Node *root,FILE *file){
                 
                fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
                fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
                
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
                fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
                fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
              }
          }else{
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
                 
-               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
                
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC DWORD[%s]\n",root->left->right->left->value);
+               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->left->value);
                fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov DWORD[%s],eax\n",root->left->left->value);
+               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
              }
            
          }
@@ -459,7 +634,7 @@ void handle_unary_assignment(Node *root,FILE *file){
     }
     
 
-   preoder_traversal(root->right,file);
+   
 }
 
 /*
@@ -489,13 +664,13 @@ void postfix_prefix_statement(Node *root,FILE *file){
           if(global_var){
             if(strcmp(root->left->left->value,"++")==0){
                if(strcmp(global_var->type,"int")==0){
-                  fprintf(file,"\tINC DWORD[%s]\n",global_var->name);
+                  fprintf(file,"\tINC DWORD[rel %s]\n",global_var->name);
                }
                
             }else if(strcmp(root->left->left->value,"--")==0){
 
                if(strcmp(global_var->type,"int")==0){
-                  fprintf(file,"\tDEC DWORD[%s]\n",global_var->name);
+                  fprintf(file,"\tDEC DWORD[rel %s]\n",global_var->name);
                }
             }
           }
@@ -522,19 +697,19 @@ void postfix_prefix_statement(Node *root,FILE *file){
             if(strcmp(root->left->value,"++")==0){
                if(strcmp(global_var->type,"int")==0){
    
-                  fprintf(file,"\tINC DWORD[%s]\n",global_var->name);
+                  fprintf(file,"\tINC DWORD[rel %s]\n",global_var->name);
                }
             }else if(strcmp(root->left->value,"--")==0){
                if(strcmp(global_var->type,"int")==0){
             
-                  fprintf(file,"\tDEC DWORD[%s]\n",global_var->name);
+                  fprintf(file,"\tDEC DWORD[rel %s]\n",global_var->name);
                }
             }
           }
       }
    }
 
-   // preoder_traversal(root->right,file);
+
 }
 
 /*
@@ -586,7 +761,7 @@ void initialization(Node *root,FILE *file){
                    }else{
                      Variable *gloabl_var=search_global(root->left->right->value);
                      if(strcmp(var->type,"int")==0 && strcmp(gloabl_var->type,"int")==0){
-                        fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                        fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
                         fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                      }
                      
@@ -621,7 +796,7 @@ void initialization(Node *root,FILE *file){
                       }else{
                         Variable *global_var=search_global(root->left->right->value);
                         if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
                            fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
                         }
                       }
@@ -653,7 +828,7 @@ void initialization(Node *root,FILE *file){
                         Variable *global_var=search_global(root->left->right->value);
                        
                         if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
                            fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
                         }
                        
@@ -688,7 +863,7 @@ void initialization(Node *root,FILE *file){
                         if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
 
                            fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                           fprintf(file,"\timul eax,[%s]\n",root->left->right->value);
+                           fprintf(file,"\timul eax,[rel %s]\n",root->left->right->value);
                            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                         }
                       }
@@ -725,7 +900,7 @@ void initialization(Node *root,FILE *file){
                         if(strcmp(var->type,"int")==0 && strcmp(global_var->type,"int")==0){
 
                            fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                           fprintf(file,"\tmov ebx,[%s]\n",root->left->right->value);
+                           fprintf(file,"\tmov ebx,[rel %s]\n",root->left->right->value);
                            fprintf(file,"\tidiv ebx\n");
                            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
                         }
@@ -756,7 +931,7 @@ void initialization(Node *root,FILE *file){
   
                   if(root->left->right->type==INT){
                      if(strcmp(var->type,"int")==0){
-                       fprintf(file,"\tmov DWORD[%s],%s\n",var->name,root->left->right->value);
+                       fprintf(file,"\tmov DWORD[rel %s],%s\n",var->name,root->left->right->value);
                      }
                     
                   }else if(root->left->right->type==IDENTIFIER){
@@ -764,14 +939,14 @@ void initialization(Node *root,FILE *file){
                      if(right_var){
                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                          fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                         }
                         
                      }else{
                        Variable *gloabl_var=search_global(root->left->right->value);
                        if(strcmp(var->type,"int")==0 && strcmp(gloabl_var->type,"int")==0){
-                          fprintf(file,"\tmov eax,[%s]\n",gloabl_var->name);
-                          fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                          fprintf(file,"\tmov eax,[rel %s]\n",gloabl_var->name);
+                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                        }
                        
                      }
@@ -779,7 +954,7 @@ void initialization(Node *root,FILE *file){
                       postorder_traversal(root->left->right,file,false,var->type);
                       fprintf(file,"\tmov eax,DWORD[rsp]\n");
                       fprintf(file,"\tadd rsp,4\n");
-                      fprintf(file,"\tmov [%s],eax\n",var->name);
+                      fprintf(file,"\tmov [rel %s],eax\n",var->name);
                   }
                }else{
                   if(strcmp(root->left->value,"+=")==0){
@@ -788,7 +963,7 @@ void initialization(Node *root,FILE *file){
                      
                        if(strcmp(var->type,"int")==0){
                       
-                          fprintf(file,"\tadd DWORD[%s],%s\n",var->name,root->left->right->value);
+                          fprintf(file,"\tadd DWORD[rel %s],%s\n",var->name,root->left->right->value);
                        }
                        
                      }else if(root->left->right->type==IDENTIFIER){
@@ -797,29 +972,29 @@ void initialization(Node *root,FILE *file){
                         if(right_var){
                            if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
                              fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                             fprintf(file,"\tadd [%s],eax\n",var->name);
+                             fprintf(file,"\tadd [rel %s],eax\n",var->name);
                            }
                            
                         }else{
                            
                           Variable *global_var=search_global(root->left->right->value);
                           if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
-                             fprintf(file,"\tadd [%s],eax\n",var->name);
+                             fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                             fprintf(file,"\tadd [rel %s],eax\n",var->name);
                           }
                         }
                      }else if(root->left->right->type==OPERATOR){
                               postorder_traversal(root->left->right,file,false,var->type);
                              fprintf(file,"\tmov eax,DWORD[rsp]\n");
                              fprintf(file,"\tadd rsp,4\n");
-                             fprintf(file,"\tadd [%s],eax\n",var->name);
+                             fprintf(file,"\tadd [rel %s],eax\n",var->name);
                      }
                   }else if(strcmp(root->left->value,"-=")==0){
                    
                     if(root->left->right->type==INT){
                        
                        if(strcmp(var->type,"int")==0){
-                          fprintf(file,"\tsub DWORD[%s],%s\n",var->name,root->left->right->value);
+                          fprintf(file,"\tsub DWORD[rel %s],%s\n",var->name,root->left->right->value);
                        }
                        
                      }else if(root->left->right->type==IDENTIFIER){
@@ -827,15 +1002,15 @@ void initialization(Node *root,FILE *file){
                         if(right_var){
                            if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
                              fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                             fprintf(file,"\tsub DWORD[%s],eax\n",var->name);
+                             fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
                            }
                         
                         }else{
                           Variable *global_var=search_global(root->left->right->value);
                          
                           if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov eax,[%s]\n",root->left->right->value);
-                             fprintf(file,"\tsub DWORD[%s],eax\n",var->name);
+                             fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                             fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
                           }
                          
                         }
@@ -844,7 +1019,7 @@ void initialization(Node *root,FILE *file){
                            if(strcmp(var->type,"int")==0){
                                fprintf(file,"\tmov eax,DWORD[rsp]\n");
                                fprintf(file,"\tadd rsp,4\n");
-                               fprintf(file,"\tsub [%s],eax\n",var->name);
+                               fprintf(file,"\tsub [rel %s],eax\n",var->name);
 
                            }
                      }
@@ -853,24 +1028,24 @@ void initialization(Node *root,FILE *file){
                           if(strcmp(var->type,"int")==0){
                              fprintf(file,"mov eax,DWORD[%s]\n",var->name);
                              fprintf(file,"\timul eax,%s\n",root->left->right->value);
-                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                           }
                      }else if(root->left->right->type==IDENTIFIER){
                         Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                         if(right_var){
                            if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
   
-                              fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                              fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
                               fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
-                              fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                              fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                            }
                         }else{
                           Variable *global_var=search_global(root->left->right->value);
                           if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
   
                              fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
-                             fprintf(file,"\timul eax,[%s]\n",root->left->right->value);
-                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                             fprintf(file,"\timul eax,DWORD[rel %s]\n",root->left->right->value);
+                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                           }
                         }
                      }else if(root->left->right->type==OPERATOR){
@@ -878,8 +1053,8 @@ void initialization(Node *root,FILE *file){
                           if(strcmp(var->type,"int")==0){
                            fprintf(file,"\tmov eax,DWORD[rsp]\n");
                            fprintf(file,"\tadd rsp,4\n");
-                           fprintf(file,"\timul eax,[%s]\n",var->name);
-                           fprintf(file,"\tmov [%s],eax\n",var->name);
+                           fprintf(file,"\timul eax,DWORD[rel %s]\n",var->name);
+                           fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                           }
                           
                      }
@@ -889,7 +1064,7 @@ void initialization(Node *root,FILE *file){
                           fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
                           fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
                           fprintf(file,"\tidiv ebx\n");
-                          fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                        }
                      
                      }else if(root->left->right->type==IDENTIFIER){
@@ -897,9 +1072,9 @@ void initialization(Node *root,FILE *file){
                         if(right_var){
                            if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
                              fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
-                             fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                             fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
                              fprintf(file,"\tidiv ebx\n");
-                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                            }
                           
                         }else{
@@ -907,9 +1082,9 @@ void initialization(Node *root,FILE *file){
                           if(strcmp(var->type,"int")==0 && strcmp(global_var->type,"int")==0){
   
                              fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
-                             fprintf(file,"\tmov ebx,[%s]\n",root->left->right->value);
+                             fprintf(file,"\tmov ebx,DWORD[rel %s]\n",root->left->right->value);
                              fprintf(file,"\tidiv ebx\n");
-                             fprintf(file,"\tmov DWORD[%s],eax\n",var->name);
+                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                           }
                         }
                      }else if(root->left->right->type==OPERATOR){
@@ -918,9 +1093,9 @@ void initialization(Node *root,FILE *file){
 
                              fprintf(file,"\tmov ebx,DWORD[rsp]\n");
                              fprintf(file,"\tadd rsp,4\n");
-                             fprintf(file,"\tmov eax,[%s]\n",var->name);
+                             fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
                              fprintf(file,"\tidiv ebx\n");
-                             fprintf(file,"\tmov [%s],eax\n",var->name);
+                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
                           }
                      }
                   }
@@ -1006,7 +1181,7 @@ void preoder_traversal(Node *root,FILE *file){
               }else{
                  Variable *var=search_global(root->left->value);
                  if(strcmp(var->type,"int")==0){
-                    fprintf(file,"\tmov edi,[%s]\n",root->left->value);
+                    fprintf(file,"\tmov edi,[rel %s]\n",root->left->value);
                  }
                  
               }
@@ -1053,6 +1228,7 @@ void preoder_traversal(Node *root,FILE *file){
                   fprintf(file,"\tmov rax,[%s]\n",root->left->value);
                }
             }else if(root->left->type==INT){
+
                fprintf(file,"\tmov rdi,%s\n",root->left->value);
             }else{
                fprintf(file,"\tpop rax\n");
@@ -1083,7 +1259,7 @@ void preoder_traversal(Node *root,FILE *file){
 
 
 
-//traversal helper
+//post order traversal 
 void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) {
   
   if (!root) return;
@@ -1091,9 +1267,9 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
       // Recursively process left and right subtrees first (Post-Order): left->right->root
       postorder_traversal(root->left, file,is_return,data_type);
       postorder_traversal(root->right, file,is_return,data_type);
-         if(root->type==INT ){
-         //  fprintf(file,"\tpush QWORD %s\n",root->value);
-          }else if(root->type==OPERATOR){
+       
+         
+          if(root->type==OPERATOR){
 
             //if it is an =,+=,-=,/=,*= sign then the value that is top of the stack is the computation of the left subtree.
          
@@ -1102,20 +1278,34 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
            // popping twice since we know if we have an operator then there must be a left value and a right value
              
              if(root->left->type==IDENTIFIER && root->right->type==IDENTIFIER){
-              
+                
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                 if(right_var){
-
+                   
                    if(strcmp(right_var->type,"int")==0){
                      fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
                    }
+                }else{
+                  Variable *global_var=search_global(root->right->value);
+                  if(global_var){
+                      if(strcmp(global_var->type,"int")==0){
+                        fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+                      }
+                  }
                 }
                 
                 if(left_var){
                   if(strcmp(left_var->type,"int")==0){
                      fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
                    }
+                }else{
+                  Variable *global_var=search_global(root->left->value);
+                  if(global_var){
+                      if(strcmp(global_var->type,"int")==0){
+                        fprintf(file,"\tmov eax,DWORD[rel %s]\n",global_var->name);
+                      }
+                  }
                 }
                 
                 
@@ -1130,7 +1320,7 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
                 }else{
                   Variable *var=search_global(root->left->value);
                   if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tmov eax,[%s]\n",root->left->value);
+                     fprintf(file,"\tmov eax,[rel %s]\n",root->left->value);
                   }
                   
                 }
@@ -1147,7 +1337,7 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
                }else{
                   Variable *var=search_global(root->left->value);
                   if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tmov ebx,[%s]\n",root->right->value);
+                     fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
                   }
                   
                }
@@ -1167,7 +1357,7 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
                      }
                     
                   }else{
-                     fprintf(file,"\tmov ebx,[%s]\n",root->right->value);
+                     fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
                   }
                }
                   fprintf(file,"\tmov eax,[rsp]\n");

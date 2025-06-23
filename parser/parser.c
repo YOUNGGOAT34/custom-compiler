@@ -176,7 +176,7 @@ Node *do_while_loop(Node *node,Token **current_token_ptr){
 
              if(token->type==INT || token->type==IDENTIFIER){
               if(token->type==IDENTIFIER){
-                if(search_variable(&scope_stack,token->value)==NULL){
+                if(!check_variable(token->value)){
                  fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value,token->line_num);
                  exit(1);
                 }
@@ -195,7 +195,7 @@ Node *do_while_loop(Node *node,Token **current_token_ptr){
                   }
                    if(token->type==INT || token->type==IDENTIFIER){
                     if(token->type==IDENTIFIER){
-                       if(hashmap_get(current_scope(&scope_stack)->map,token->value)==NULL){
+                       if(!check_variable(token->value)){
                         fprintf(stderr, "\033[1;31mError:\033[0m Variable '%s' is not defined (line %zu)\n", token->value,token->line_num);
                         exit(1);
                        }
@@ -1316,6 +1316,8 @@ Node *while_statement_generation(Node *node,Token **current_token_ptr){
                          node=do_while_loop(node,&token);
                       }else if(strcmp(token->value,"++")==0 || strcmp(token->value,"--")==0){
                          node=postfix_prefix(node,&token);
+                      }else if(strcmp(token->value,"printf")==0){
+                          node=handle_writing_to_the_console(node,&token);
                       }
                      }
                     
