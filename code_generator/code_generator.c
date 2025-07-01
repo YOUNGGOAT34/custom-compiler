@@ -2,13 +2,14 @@
 #include "code_generator.h"
 
 
+
 static int if_label_counter=0;
 static int while_label_counter=0;
 static int do_while_label_counter=0;
 static int in_line_label=0;
 
 Node *parent=NULL;
-char *type;
+Returntype type;
 bool is_return=false;
 Table *scope;
 //while statement code generation
@@ -33,18 +34,53 @@ void while_statement(Node *root,FILE *file){
      
      Variable *var=search_variable(&code_gen_stack,lhs->value);
      if(var){
-        if(strcmp(var->type,"int")==0){
-         fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
-        }
+         switch(var->type){
+            case INTEGER:
+                  fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
+                  break;
+
+            case LONG:
+                  fprintf(file, "\tmov rax, QWORD [rbp-%d]\n", var->offset);
+                  break;
+
+            case LONGLONG:
+                  fprintf(file, "\tmov rax, QWORD [rbp-%d]\n", var->offset);
+                  break;
+
+            case SHORT:
+                  fprintf(file, "\tmov ax, WORD [rbp-%d]\n", var->offset);
+                  break;
+
+            case CHARACTER:
+                  break;
+
+         }
+       
         
      }else{
      
       Variable *global_var=search_global(lhs->value);
-      if(strcmp(global_var->type,"int")==0){
-        
-         fprintf(file, "\tmov eax, DWORD[rel %s]\n", global_var->name);
-        
+      switch(global_var->type){
+         case INTEGER:
+            fprintf(file, "\tmov eax, DWORD[rel %s]\n", global_var->name);
+            break;
+
+         case LONG:
+            fprintf(file, "\tmov rax, QWORD[rel %s]\n", global_var->name);
+            break;
+
+         case LONGLONG:
+            fprintf(file, "\tmov rax, QWORD[rel %s]\n", global_var->name);
+            break;
+
+         case SHORT:
+            fprintf(file, "\tmov ax, WORD[rel %s]\n", global_var->name);
+            break;
+
+         case CHARACTER:
+            break;
       }
+     
      }
 
       //rhs
@@ -52,28 +88,108 @@ void while_statement(Node *root,FILE *file){
 
          Variable *right_var=search_variable(&code_gen_stack,rhs->value);
          if(right_var){
-         if(strcmp(right_var->type,"int")==0){
-            fprintf(file, "\tmov ebx, DWORD[rbp-%d]\n", right_var->offset);
-         }
+            switch(right_var->type){
+               case INTEGER:
+                   fprintf(file, "\tmov ebx, DWORD[rbp-%d]\n", right_var->offset);
+                   break;
+
+                  case LONG:
+                   fprintf(file, "\tmov rbx, QWORD[rbp-%d]\n", right_var->offset);
+                   break;
+
+                  case LONGLONG:
+                   fprintf(file, "\tmov rbx, QWORD[rbp-%d]\n", right_var->offset);
+                   break;
+
+                  case SHORT:
+                   fprintf(file, "\tmov bx, WORD[rbp-%d]\n", right_var->offset);
+                   break;
+
+                  case CHARACTER:
+                   break;
+
+            }
+        
          
          }else{
             Variable *global_var=search_global(rhs->value);
-            if(strcmp(global_var->type,"int")==0){
-               fprintf(file, "\tmov ebx, DWORD[rel %s]\n", global_var->name);
+            if(global_var){
+                switch(global_var->type){
+                  case INTEGER:
+                     fprintf(file, "\tmov ebx, DWORD[rel %s]\n", global_var->name);
+                     break;
+
+                  case LONG:
+                     fprintf(file, "\tmov rbx, QWORD[rel %s]\n", global_var->name);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file, "\tmov rbx, QWORD[rel %s]\n", global_var->name);
+                     break;
+
+                  case SHORT:
+                     fprintf(file, "\tmov bx, WORD[rel %s]\n", global_var->name);
+                     break;
+
+                  case CHARACTER:
+
+                     break;
+
+                }
             }
+          
          }
-      } else{
-        
+      } else if(rhs->type==INT){
          if(var){
-            if(strcmp(var->type,"int")==0){
-              
-              fprintf(file, "\tmov ebx, %s\n", rhs->value);
+            switch(var->type){
+               case INTEGER:
+                   fprintf(file, "\tmov ebx, %s\n", rhs->value);
+                   break;
+
+               case LONG:
+                   fprintf(file, "\tmov rbx, %s\n", rhs->value);
+                   
+                   break;
+
+               case LONGLONG:
+                   fprintf(file, "\tmov rbx, %s\n", rhs->value);
+                   break;
+
+               case SHORT:
+                   fprintf(file, "\tmov bx, %s\n", rhs->value);
+                   break;
+
+               case CHARACTER:
+                   break;
+
             }
+         
          }else{
-             Variable *gloabl_var=search_global(lhs->value);
-             if(strcmp(gloabl_var->type,"int")==0){
-               fprintf(file, "\tmov ebx, %s\n", rhs->value);
+             Variable *global_var=search_global(lhs->value);
+             if(global_var){
+                switch(global_var->type){
+                   case INTEGER:
+                      fprintf(file, "\tmov ebx, %s\n", rhs->value);
+                      break;
+
+                  case LONGLONG:
+                      fprintf(file, "\tmov rbx, %s\n", rhs->value);
+                      break;
+
+                  case LONG:
+                      fprintf(file, "\tmov rbx, %s\n", rhs->value);
+                      break;
+
+                  case SHORT:
+                      fprintf(file, "\tmov bx, %s\n", rhs->value);
+                      break;
+
+                  case CHARACTER:
+                      break;
+
+                }
              }
+            
          }
          
       }
@@ -83,18 +199,63 @@ void while_statement(Node *root,FILE *file){
       if(rhs->type==IDENTIFIER){
          Variable *right_var=search_variable(&code_gen_stack,rhs->value);
          if(right_var){
-            if(strcmp(right_var->type,"int")==0){
-               fprintf(file, "\tmov eax, %s\n", lhs->value);
-               fprintf(file, "\tmov ebx, DWORD[rbp-%d]\n", right_var->offset);
+            switch(right_var->type){
+               case INTEGER:
+                  fprintf(file, "\tmov eax, %s\n", lhs->value);
+                  fprintf(file, "\tmov ebx, DWORD[rbp-%d]\n", right_var->offset);
+                  break;
+
+               case LONG:
+                  fprintf(file, "\tmov rax, %s\n", lhs->value);
+                  fprintf(file, "\tmov rbx, QWORD[rbp-%d]\n", right_var->offset);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file, "\tmov rax, %s\n", lhs->value);
+                  fprintf(file, "\tmov rbx, QWORD[rbp-%d]\n", right_var->offset);
+                  break;
+
+               case SHORT:
+                  fprintf(file, "\tmov ax, %s\n", lhs->value);
+                  fprintf(file, "\tmov bx, WORD[rbp-%d]\n", right_var->offset);
+                  break;
+
+               case CHARACTER:
+                  break;
+ 
             }
+           
             
          }else{
              Variable *global_var=search_global(rhs->value);
-             if(right_var){
-                 if(strcmp(global_var->type,"int")==0){
-                  fprintf(file, "\tmov eax, %s\n", lhs->value);
-                  fprintf(file, "\tmov ebx, DWORD[rel %s]\n", global_var->name);
-                 }
+             if(global_var){
+                  switch(global_var->type){
+                     case INTEGER:
+                        fprintf(file, "\tmov eax, %s\n", lhs->value);
+                        fprintf(file, "\tmov ebx, DWORD[rel %s]\n", global_var->name);
+                        break;
+
+                     case LONG:
+                        fprintf(file, "\tmov rax, %s\n", lhs->value);
+                        fprintf(file, "\tmov rbx, QWORD[rel %s]\n", global_var->name);
+                        break;
+
+                     case LONGLONG:
+                        fprintf(file, "\tmov rax, %s\n", lhs->value);
+                        fprintf(file, "\tmov rbx, QWORD[rel %s]\n", global_var->name);
+                        break;
+
+                     case SHORT:
+                        fprintf(file, "\tmov ax, %s\n", lhs->value);
+                        fprintf(file, "\tmov bx, WORD[rel %s]\n", global_var->name);
+                        break;
+
+                     case CHARACTER:
+                      
+                        break;
+
+                  }
+               
              }
          }
       }else{
@@ -171,14 +332,54 @@ void if_statement(Node *root,FILE *file){
         
         Variable *var=search_variable(&code_gen_stack,lhs->value);
         if(var){
-         if(strcmp(var->type,"int")==0){
-            fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
-         }
+           switch(var->type){
+               case INTEGER:
+                   fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
+                   break;
+
+               case LONG:
+                   fprintf(file, "\tmov rax, QWORD [rbp-%d]\n", var->offset);
+                   break;
+
+               case LONGLONG:
+                   fprintf(file, "\tmov rax, QWORD [rbp-%d]\n", var->offset);
+                   break;
+
+               case SHORT:
+                   fprintf(file, "\tmov ax, WORD [rbp-%d]\n", var->offset);
+                   break;
+
+               case CHARACTER:
+                  //  fprintf(file, "\tmov eax, DWORD [rbp-%d]\n", var->offset);
+                   break;
+
+           }
+       
          
         }else{
           Variable *global_var=search_global(lhs->value);
-          if(strcmp(global_var->type,"int")==0){
-            fprintf(file, "\tmov eax, DWORD [%s]\n", global_var->name);
+          if(global_var){
+             switch(global_var->type){
+                  case INTEGER:
+                     fprintf(file, "\tmov eax, DWORD [%s]\n", global_var->name);
+                     break;
+
+                  case LONG:
+                     fprintf(file, "\tmov rax, QWORD [%s]\n", global_var->name);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file, "\tmov rax, QWORD [%s]\n", global_var->name);
+                     break;
+
+                  case SHORT:
+                     fprintf(file, "\tmov ax, WORD [%s]\n", global_var->name);
+                     break;
+
+                  case CHARACTER:
+                     // fprintf(file, "\tmov eax, DWORD [%s]\n", global_var->name);
+                     break;
+             }
           }
           
         }
@@ -186,16 +387,54 @@ void if_statement(Node *root,FILE *file){
           // Generate code for rhs
         if (rhs->type == IDENTIFIER){
              Variable *right_var=search_variable(&code_gen_stack,rhs->value);
-         if(right_var){
-            if(strcmp(right_var->type,"int")==0){
-               fprintf(file, "\tmov ebx, DWORD rbp-%d]\n", right_var->offset);
-            }
+             
+            if(right_var){
+               switch(right_var->type){
+                  case INTEGER:
+                      fprintf(file, "\tmov ebx, DWORD rbp-%d]\n", right_var->offset);
+                      break;
+
+                  case LONG:
+                      fprintf(file, "\tmov rbx, QWORD rbp-%d]\n", right_var->offset);
+                      break;
+
+                  case LONGLONG:
+                      fprintf(file, "\tmov rbx, QWORD rbp-%d]\n", right_var->offset);
+                      break;
+
+                  case SHORT:
+                      fprintf(file, "\tmov rbx, QWORD rbp-%d]\n", right_var->offset);
+                      break;
+
+                  case CHARACTER:
+                     //  fprintf(file, "\tmov ebx, DWORD rbp-%d]\n", right_var->offset);
+                      break;
+
+               }
          
          }else{
             Variable *global_var=search_global(rhs->value);
             if(global_var){
-                if(strcmp(global_var->type,"int")==0){
-                   fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                switch(global_var->type){
+                  case INTEGER:
+                      fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                      break;
+
+                  case LONGLONG:
+                      fprintf(file,"\tmov rbx,QWORD [rel %s]\n",global_var->name);
+                      break;
+
+                  case LONG:
+                      fprintf(file,"\tmov rbx,QWORD [rel %s]\n",global_var->name);
+                      break;
+
+                  case SHORT:
+                      fprintf(file,"\tmov bx,WORD [rel %s]\n",global_var->name);
+                      break;
+
+                  case CHARACTER:
+                     //  fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                      break;
 
                 }
             }
@@ -203,17 +442,53 @@ void if_statement(Node *root,FILE *file){
           }
       }else{
          if(var){
+             switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tmov ebx,%s\n",rhs->value);
+                  break;
 
-            if(strcmp(var->type,"int")==0){
-               fprintf(file,"\tmov ebx,%s\n",rhs->value);
-            }
+               case LONG:
+                  fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tmov bx,%s\n",rhs->value);
+                  break;
+
+               case CHARACTER:
+                  break;
+                
+             }
+           
          }else{
             Variable *global_var=search_global(lhs->value);
             if(global_var){
+               switch(global_var->type){
+                  case INTEGER:
+                     fprintf(file,"\tmov ebx,%s\n",rhs->value);
+                     break;
 
-            if(strcmp(global_var->type,"int")==0){
-               fprintf(file,"\tmov ebx,%s\n",rhs->value);
-            }
+                  case LONG:
+                     fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                     break;
+
+                  case SHORT:
+                     fprintf(file,"\tmov bx,%s\n",rhs->value);
+                     break;
+
+                  case CHARACTER:
+                     break;
+
+               }
+           
             }
          }
        
@@ -222,17 +497,60 @@ void if_statement(Node *root,FILE *file){
        if(rhs->type==IDENTIFIER){
           Variable *var=search_global(rhs->value);
           if(var){
-             if(strcmp(var->type,"int")==0){
-                fprintf(file,"\tmov eax,%s\n",lhs->value);
-                fprintf(file,"\tmov ebx,[rel %s]\n",var->name);
+             switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tmov eax,%s\n",lhs->value);
+                  fprintf(file,"\tmov ebx,[rel %s]\n",var->name);
+                  break;
+
+               case LONG:
+                  fprintf(file,"\tmov rax,%s\n",lhs->value);
+                  fprintf(file,"\tmov rbx,[rel %s]\n",var->name);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tmov rax,%s\n",lhs->value);
+                  fprintf(file,"\tmov rbx,[rel %s]\n",var->name);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tmov ax,%s\n",lhs->value);
+                  fprintf(file,"\tmov bx,[rel %s]\n",var->name);
+                  break;
+
+               case CHARACTER:
+                  break;
              }
+            
           }else{
              Variable *local_var=search_variable(&code_gen_stack,rhs->value);
              if(local_var){
-                if(strcmp(local_var->type,"int")==0){
-                  fprintf(file,"\tmov eax,%s\n",lhs->value);
-                  fprintf(file,"\tmov ebx,[rbp-%d]\n",local_var->offset);
-                }
+                  switch(local_var->type){
+                     case INTEGER:
+                        fprintf(file,"\tmov eax,%s\n",lhs->value);
+                        fprintf(file,"\tmov ebx,[rbp-%d]\n",local_var->offset);
+                        break;
+
+                     case LONG:
+                        fprintf(file,"\tmov rax,%s\n",lhs->value);
+                        fprintf(file,"\tmov rbx,[rbp-%d]\n",local_var->offset);
+                        break;
+
+                     case LONGLONG:
+                        fprintf(file,"\tmov rax,%s\n",lhs->value);
+                        fprintf(file,"\tmov rbx,[rbp-%d]\n",local_var->offset);
+                        break;
+
+                     case SHORT:
+                        fprintf(file,"\tmov ax,%s\n",lhs->value);
+                        fprintf(file,"\tmov bx,[rbp-%d]\n",local_var->offset);
+                        break;
+
+                     case CHARACTER:
+                        break;
+                     
+                  }
+              
              }
           }
        }else{
@@ -325,10 +643,11 @@ void if_statement(Node *root,FILE *file){
   
   
 }
+
 /*
   A do while loop should execute altleast once
   so generate the body ,then check the condition
-  to the left of the do node we have {
+  to the left of the do node we have {root->value;
   to the right of do we have }
   to the left of { is the code block
   and to the right of { is the while statement and the condition
@@ -360,27 +679,102 @@ void do_while(Node *root,FILE *file){
       Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,lhs->value);
        
       if(var){
-         if(strcmp(var->type,"int")==0){
-            fprintf(file,"\tmov eax,DWORD [rbp-%d]\n",var->offset);
+         switch(var->type){
+            case INTEGER:
+               fprintf(file,"\tmov eax,DWORD [rbp-%d]\n",var->offset);
+               break;
+
+            case LONG:
+               fprintf(file,"\tmov rax,QWORD [rbp-%d]\n",var->offset);
+               break;
+
+            case LONGLONG:
+               fprintf(file,"\tmov rax,QWORD [rbp-%d]\n",var->offset);
+               break;
+
+            case SHORT:
+               fprintf(file,"\tmov ax,WORD [rbp-%d]\n",var->offset);
+               break;
+
+            case CHARACTER:
+               break;
          }
+        
 
          if(rhs->type==INT){
-            if(strcmp(var->type,"int")==0){
-               fprintf(file,"\tmov ebx,%s\n",rhs->value);
+            switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tmov ebx,%s\n",rhs->value);
+                  break;
+
+               case LONG:
+                  fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tmov bx,%s\n",rhs->value);
+                  break;
+
+               case CHARACTER:
+                  break;
+
             }
+           
            
          }else if(rhs->type==IDENTIFIER){
              Variable *right_var=search_variable(&code_gen_stack,rhs->value);
              if(right_var){
-                if(strcmp(right_var->type,"int")==0){
-                   fprintf(file,"\tmov ebx,DWORD [rel %s]\n",right_var->name);
+                switch(right_var->type){
+                  case INTEGER:
+                     fprintf(file,"\tmov ebx,DWORD [rel %s]\n",right_var->name);
+                     break;
+
+                  case LONG:
+                     fprintf(file,"\tmov rbx,QWORD [rel %s]\n",right_var->name);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file,"\tmov rbx,QWORD [rel %s]\n",right_var->name);
+                     break;
+
+                  case SHORT:
+                     fprintf(file,"\tmov bx,WORD [rel %s]\n",right_var->name);
+                     break;
+
+                  case CHARACTER:
+                     break;
+
                 }
+              
              }else{
                Variable *global_var=search_global(rhs->value);
                if(global_var){
-                  if(strcmp(global_var->type,"int")==0){
-                     fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                  switch(global_var->type){
+                     case INTEGER:
+                        fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                        break;
+
+                     case LONG:
+                        fprintf(file,"\tmov rbx,QWORD [rel %s]\n",global_var->name);
+                        break;
+
+                     case LONGLONG:
+                        fprintf(file,"\tmov rbx,QWORD [rel %s]\n",global_var->name);
+                        break;
+
+                     case SHORT:
+                        fprintf(file,"\tmov bx,WORD [rel %s]\n",global_var->name);
+                        break;
+
+                     case CHARACTER:
+                        break;
+
                   }
+                 
                }
              }
          }
@@ -390,50 +784,168 @@ void do_while(Node *root,FILE *file){
       }else{
          Variable *global_var=search_global(lhs->value);
          if(global_var){
-            if(strcmp(global_var->type,"int")==0){
-               fprintf(file,"\tmov eax,DWORD [rel %s]\n",global_var->name);
+            switch(global_var->type){
+               case INTEGER:
+                  fprintf(file,"\tmov eax,DWORD [rel %s]\n",global_var->name);
+                  break;
+
+               case LONG:
+                  fprintf(file,"\tmov rax,QWORD [rel %s]\n",global_var->name);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tmov rax,QWORD [rel %s]\n",global_var->name);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tmov ax,WORD [rel %s]\n",global_var->name);
+                  break;
+
+               case CHARACTER:
+                  break;
+
             }
-   
+           
             if(rhs->type==INT){
-               if(strcmp(global_var->type,"int")==0){
-                  fprintf(file,"\tmov ebx,%s\n",rhs->value);
+               switch(global_var->type){
+                  case INTEGER:
+                     fprintf(file,"\tmov ebx,%s\n",rhs->value);
+                     break;
+
+                  case LONG:
+                     fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file,"\tmov rbx,%s\n",rhs->value);
+                     break;
+
+                  case SHORT:
+                     fprintf(file,"\tmov bx,%s\n",rhs->value);
+                     break;
+
+                  case CHARACTER:
+                     break;
                }
+             
               
             }else if(rhs->type==IDENTIFIER){
                 Variable *right_var=search_variable(&code_gen_stack,rhs->value);
                 if(right_var){
-                   if(strcmp(right_var->type,"int")==0){
-                      fprintf(file,"\tmov ebx,DWORD[rel %s]\n",right_var->name);
+                   switch(right_var->type){
+                        case INTEGER:
+                           fprintf(file,"\tmov ebx,DWORD[rel %s]\n",right_var->name);
+                           break;
+
+                        case LONG:
+                           fprintf(file,"\tmov rbx,QWORD[rel %s]\n",right_var->name);
+                           break;
+
+                        case LONGLONG:
+                           fprintf(file,"\tmov rbx,QWORD[rel %s]\n",right_var->name);
+                           break;
+
+                        case SHORT:
+                           fprintf(file,"\tmov bx,WORD[rel %s]\n",right_var->name);
+                           break;
+
+                        case CHARACTER:
+                           break;
+
                    }
+                 
                 }else{
                    Variable *global_var=search_global(rhs->value);
                    if(global_var){
-                      if(strcmp(global_var->type,"int")==0){
-                         fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                      switch(global_var->type){
+                         case INTEGER:
+                           fprintf(file,"\tmov ebx,DWORD [rel %s]\n",global_var->name);
+                           break;
+
+                        case LONG:
+                           fprintf(file,"\tmov rbx,QWORD [rel %s]\n",global_var->name);
+                           break;
+
+                        case LONGLONG:
+                           fprintf(file,"\tmov rbx,QWORD [rel %s]\n",global_var->name);
+                           break;
+
+                        case SHORT:
+                           fprintf(file,"\tmov bx,WORD [rel %s]\n",global_var->name);
+                           break;
+
+                        case CHARACTER:
+                           break;
+
                       }
+                     
                    }
                 }
             }
    
    
            
-         }
-      } 
-    }else{
+           }
+         } 
+      }else{
       if(rhs->type==IDENTIFIER){
          Variable *right_var=search_variable(&code_gen_stack,rhs->value);
          if(right_var){
-            if(strcmp(right_var->type,"int")==0){
-              fprintf(file,"\tmov eax,%s\n",lhs->value);
-              fprintf(file,"\tmov ebx,DWORD [rbp-%d]\n",right_var->offset);
+            switch(right_var->type){
+               case INTEGER:
+                  fprintf(file,"\tmov eax,%s\n",lhs->value);
+                  fprintf(file,"\tmov ebx,DWORD [rbp-%d]\n",right_var->offset);
+                  break;
+
+               case LONG:
+                  fprintf(file,"\tmov rax,%s\n",lhs->value);
+                  fprintf(file,"\tmov rbx,QWORD [rbp-%d]\n",right_var->offset);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tmov rax,%s\n",lhs->value);
+                  fprintf(file,"\tmov rbx,QWORD [rbp-%d]\n",right_var->offset);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tmov ax,%s\n",lhs->value);
+                  fprintf(file,"\tmov bx,WORD [rbp-%d]\n",right_var->offset);
+                  break;
+
+               case CHARACTER:
+                  break;
+
             }
+           
          }else{
             Variable *global_var=search_global(rhs->value);
             if(global_var){
-               if(strcmp(global_var->type,"int")==0){
-                 fprintf(file,"\tmov eax,%s\n",lhs->value);
-                 fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+               switch(global_var->type){
+                  case INTEGER:
+                     fprintf(file,"\tmov eax,%s\n",lhs->value);
+                     fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case LONG:
+                     fprintf(file,"\tmov rax,%s\n",lhs->value);
+                     fprintf(file,"\tmov rbx,QWORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file,"\tmov rax,%s\n",lhs->value);
+                     fprintf(file,"\tmov rbx,QWORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case SHORT:
+                     fprintf(file,"\tmov ax,%s\n",lhs->value);
+                     fprintf(file,"\tmov bx,WORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case CHARACTER:
+                     break;
+                     
                }
+             
             }
          }
           
@@ -475,7 +987,7 @@ void do_while(Node *root,FILE *file){
 void generate_data_section(Node *root,FILE *file){
    
    if(!root) return;
-   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
+   if((strcmp(root->value,"int")==0 || strcmp(root->value,"short")==0) && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
    /*
    if the function encounters a variable it defines it in the data section
    It might be a function though.
@@ -484,6 +996,38 @@ void generate_data_section(Node *root,FILE *file){
       
        
       fprintf(file,"\t%s dd 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
+                                                         then left of equal there is variable name ,and right is the expression or a value*/
+     
+   }
+
+   if( strcmp(root->value,"long")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0 &&strcmp(root->left->left->value,"[")!=0){
+      
+       
+      fprintf(file,"\t%s dq 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
+                                                         then left of equal there is variable name ,and right is the expression or a value*/
+     
+   }
+
+   if( strcmp(root->value,"short")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0 &&strcmp(root->left->left->value,"[")!=0){
+      
+       
+      fprintf(file,"\t%s dw 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
+                                                         then left of equal there is variable name ,and right is the expression or a value*/
+     
+   }
+
+   if( strcmp(root->value,"long long")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0 &&strcmp(root->left->left->value,"[")!=0){
+      
+       
+      fprintf(file,"\t%s dq 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
+                                                         then left of equal there is variable name ,and right is the expression or a value*/
+     
+   }
+
+   if( strcmp(root->value,"char")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0 &&strcmp(root->left->left->value,"[")!=0){
+      
+       
+      fprintf(file,"\t%s db 0\n",root->left->left->value);/*root->left->left because my ast is structured in a way that when I encounter int key word,its left is =,
                                                          then left of equal there is variable name ,and right is the expression or a value*/
      
    }
@@ -515,24 +1059,126 @@ void handle_unary_assignment(Node *root,FILE *file){
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->value);
          if(rhs_var){
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+                if(lhs_var->type==rhs_var->type){
+                     switch(lhs_var->type){
+                          case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                              fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                              fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+                              break;
+                          case LONG:
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                              fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                              break;
+                          case LONGLONG:
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                              fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                              break;
+                          case SHORT:
+                              fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                              fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                              fprintf(file,"\tDEC WORD[rbp-%d]\n",rhs_var->offset);
+                              break;
+                          case CHARACTER:
+                               break;
+                     }
+                }
+               
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+               if(lhs_var->type==rhs_var->type){
+                   switch(lhs_var->type){
+                       case INTEGER:
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                           fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case LONG:
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case LONGLONG:
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case SHORT:
+                           fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                           fprintf(file,"\tINC WORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case CHARACTER:
+                           break;
+                   }
+               }
+               
              }
          }else{
-
+            Variable *rhs_var=search_global(root->left->right->value);
             if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-               fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->value);
+               if(rhs_var->type==lhs_var->type){
+                  switch(lhs_var->type){
+                       case INTEGER:
+                           fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                           fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case LONG:
+                           fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           fprintf(file,"\tDEC QWORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case LONGLONG:
+                           fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           fprintf(file,"\tDEC QWORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case SHORT:
+                           fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                           fprintf(file,"\tDEC WORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case CHARACTER:
+                           // fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
+                           // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                           // fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->value);
+                           break;
+                  }
+              }
+              
              }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->value);
+               if(rhs_var->type==lhs_var->type){
+                  switch(lhs_var->type){
+                       case INTEGER:
+                           fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                           fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case LONG:
+                           fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case LONGLONG:
+                           fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case SHORT:
+                           fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->value);
+                           fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                           fprintf(file,"\tINC WORD[rel %s]\n",root->left->right->value);
+                           break;
+                       case CHARACTER:
+                           // fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->value);
+                           // fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                           // fprintf(file,"\tINC WORD[rel %s]\n",root->left->right->value);
+                           break;
+                  }
+              }
+              
              }
             
            
@@ -542,89 +1188,385 @@ void handle_unary_assignment(Node *root,FILE *file){
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->left->value);
          if(rhs_var){
             if(root->left->right && strcmp(root->left->right->value,"--")==0){
-               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                if(lhs_var->type==rhs_var->type){
+                   switch(lhs_var->type){
+                       case INTEGER:
+                           fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                           break;
+
+                       case LONG:
+                           fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           break;
+
+                       case LONGLONG:
+                           fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                           break;
+
+                       case SHORT:
+                           fprintf(file,"\tDEC WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                           break;
+
+                       case CHARACTER:
+                     //   fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+                     //   fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                     //   fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                       break;
+                   }
+                }
+               
                
              }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+               if(rhs_var->type==lhs_var->type){
+                    switch(lhs_var->type){
+                           case INTEGER:
+                                 fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                                 break;
+
+                           case LONG:
+                                 fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                                 break;
+
+                           case LONGLONG:
+                                 fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                                 break;
+                           case SHORT:
+                                 fprintf(file,"\tINC WORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                                 fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                                 break;
+                           case CHARACTER:
+                                 // fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+                                 // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                                 // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                                 break;
+                    }
+               }
+              
              }
          }else{
-            if(root->left->right && strcmp(root->left->right->value,"--")==0){
-               fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
-                
-             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+             Variable *rhs_var=search_global(root->left->right->left->value);
+             if(rhs_var){
+                 if(rhs_var->type==lhs_var->type){
+
+                    if(root->left->right && strcmp(root->left->right->value,"--")==0){
+                     switch(lhs_var->type){
+                        case INTEGER:
+                              fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                              break;
+                        case LONG:
+                              fprintf(file,"\tDEC QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tDEC QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                              break;
+                        case SHORT:
+                              fprintf(file,"\tDEC WORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                              break;
+                        case CHARACTER:
+                              break;
+                   }
+                      
+                        
+                     }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+                        switch(lhs_var->type){
+                           case INTEGER:
+                                 fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov DWORD[rbp-%d],eax\n",lhs_var->offset);
+                                 break;
+                           case LONG:
+                                 fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                                 break;
+                           case LONGLONG:
+                                 fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",lhs_var->offset);
+                                 break;
+                           case SHORT:
+                                 fprintf(file,"\tINC WORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->left->value);
+                                 fprintf(file,"\tmov WORD[rbp-%d],ax\n",lhs_var->offset);
+                                 break;
+                           case CHARACTER:
+                                 break;
+                      }
+                      
+                     }
+                 }
              }
            
          }
          
       }
     }else{
+      Variable *lhs_var=search_global(root->left->left->value);
+      if(lhs_var){
 
+      }
       if(root->left->right && root->left->right->type==IDENTIFIER){
-        
+   
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->value);
          if(rhs_var){
-            if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-              
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
-               
-               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
-             }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
-               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
-             }
+            if(rhs_var->type==lhs_var->type){
+               if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
+                   switch(lhs_var->type){
+                       case INTEGER:
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                           fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case LONG:
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case LONGLONG:
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case SHORT:
+                           fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                           fprintf(file,"\tDEC WORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case CHARACTER:
+                           break;
+                   }
+
+                }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
+                  switch(lhs_var->type){
+                       case INTEGER:
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                           fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case LONG:
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case LONGLONG:
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case SHORT:
+                           fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                           fprintf(file,"\tINC WORD[rbp-%d]\n",rhs_var->offset);
+                           break;
+                       case CHARACTER:
+                           break;
+                  }
+
+                }
+            }
          }else{
-            if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
-              
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+            Variable *rhs_var=search_global(root->left->right->value);
+            if(rhs_var->type==lhs_var->type){
                
-               fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->value);
-             }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
-               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->value);
-             }
+               if(root->left->right->left && strcmp(root->left->right->left->value,"--")==0){
+                  switch(lhs_var->type){
+                       case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                              fprintf(file,"\tDEC DWORD[%s]\n",root->left->right->value);
+                              break;
+                       case LONG:
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->value);
+                              break;
+                       case LONGLONG:
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              fprintf(file,"\tDEC QWORD[%s]\n",root->left->right->value);
+                              break;
+                       case SHORT:
+                              fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                              fprintf(file,"\tDEC WORD[%s]\n",root->left->right->value);
+                              break;
+                       case CHARACTER:
+
+                              break;
+                  }
+
+                }else if(root->left->right->left && strcmp(root->left->right->left->value,"++")==0){
+                  switch(lhs_var->type){
+                       case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                              fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->value);
+                              break;
+                       case LONG:
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->value);
+                              break;
+                       case LONGLONG:
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->value);
+                              break;
+                       case SHORT:
+                              fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->value);
+                              fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                              fprintf(file,"\tINC WORD[rel %s]\n",root->left->right->value);
+                              break;
+                       case CHARACTER:
+                              break;
+                  }
+
+                }
+            }
          
          }
          
       }else if(root->left->right && root->left->right->left && root->left->right->type==OPERATOR){
          Variable *rhs_var=search_variable(&code_gen_stack,root->left->right->left->value);
          if(rhs_var){
-            
-            if(root->left->right && strcmp(root->left->right->value,"--")==0){
-                
-               fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
-               
-             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
-             }
+            if(rhs_var->type==lhs_var->type){
+               if(root->left->right && strcmp(root->left->right->value,"--")==0){
+                  switch(lhs_var->type){
+                     case INTEGER:
+                           fprintf(file,"\tDEC DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                           break;
+                     case LONG:
+                           fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           break;
+                     case LONGLONG:
+                           fprintf(file,"\tDEC QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           break;
+                     case SHORT:
+                           fprintf(file,"\tDEC WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                           break;
+                     case CHARACTER:
+                           break;
+                  }
+
+                  
+                }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+                  switch(lhs_var->type){
+                     case INTEGER:
+                           fprintf(file,"\tINC DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                           break;
+                     case LONG:
+                           fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           break;
+                     case LONGLONG:
+                           fprintf(file,"\tINC QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                           break;
+                     case SHORT:
+                           fprintf(file,"\tINC WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov ax,WORD[rbp-%d]\n",rhs_var->offset);
+                           fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                           break;
+                     case CHARACTER:
+                           break;
+                  }
+
+                }
+            }
          }else{
-            if(root->left->right && strcmp(root->left->right->value,"--")==0){
-                
-               fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+            Variable *rhs_var=search_global(root->left->right->left->value);
+            if(rhs_var){
                
-             }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
-               fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
-               fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
-             }
+               if(rhs_var->type==lhs_var->type){
+                  if(root->left->right && strcmp(root->left->right->value,"--")==0){
+                     switch(lhs_var->type){
+                        case INTEGER:
+                              fprintf(file,"\tDEC DWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov eax,DWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                              break;
+                        case LONG:
+                              fprintf(file,"\tDEC QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov eax,QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov QWORD[rel %s],eax\n",root->left->left->value);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tDEC QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov rax,QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              break;
+                        case SHORT:
+                              fprintf(file,"\tDEC WORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov ax,WORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                              break;
+                        case CHARACTER:
+                              break;
+                     }
+
+                   }else if(root->left->right && strcmp(root->left->right->value,"++")==0){
+                     switch(lhs_var->type){
+                        case INTEGER:
+                              fprintf(file,"\tINC DWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov eax,DWORD[%s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov DWORD[rel %s],eax\n",root->left->left->value);
+                              break;
+                        case LONG:
+                              fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov rax,QWORD[%s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tINC QWORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov rax,QWORD[%s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",root->left->left->value);
+                              break;
+                        case SHORT:
+                              fprintf(file,"\tINC WORD[rel %s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov ax,WORD[%s]\n",root->left->right->left->value);
+                              fprintf(file,"\tmov WORD[rel %s],ax\n",root->left->left->value);
+                              break;
+                        case CHARACTER:
+                              break;
+                     }
+
+                   }
+               }
+            }
            
          }
          
@@ -638,7 +1580,7 @@ void handle_unary_assignment(Node *root,FILE *file){
 }
 
 /*
-  
+   
 */
 
 void postfix_prefix_statement(Node *root,FILE *file){
@@ -648,62 +1590,216 @@ void postfix_prefix_statement(Node *root,FILE *file){
       if(var){
         
          if(strcmp(root->left->left->value,"++")==0){
-            if(strcmp(var->type,"int")==0){
-               fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+            switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case LONG:
+                  fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tINC WORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case CHARACTER:
+                  break;
+
             }
+          
             
          }else if(strcmp(root->left->left->value,"--")==0){
-            if(strcmp(var->type,"int")==0){
-               fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+            switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case LONG:
+                  fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tDEC WORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case CHARACTER:
+  
+                  break;
+
             }
+           
             
          }
          
       }else{
           Variable *global_var=search_global(root->left->value);
           if(global_var){
+            
             if(strcmp(root->left->left->value,"++")==0){
-               if(strcmp(global_var->type,"int")==0){
-                  fprintf(file,"\tINC DWORD[rel %s]\n",global_var->name);
+               switch(global_var->type){
+                  case INTEGER:
+                     fprintf(file,"\tINC DWORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case LONG:
+                     fprintf(file,"\tINC QWORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case LONGLONG:
+                     fprintf(file,"\tINC QWORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case SHORT:
+                     fprintf(file,"\tINC WORD[rel %s]\n",global_var->name);
+                     break;
+
+                  case CHARACTER:
+
+                     break;
+
                }
+             
                
             }else if(strcmp(root->left->left->value,"--")==0){
+                switch(global_var->type){
+                        case INTEGER:
+                           fprintf(file,"\tDEC DWORD[rel %s]\n",global_var->name);
+                           break;
 
-               if(strcmp(global_var->type,"int")==0){
-                  fprintf(file,"\tDEC DWORD[rel %s]\n",global_var->name);
-               }
-            }
-          }
-      }
-   }else if(root->left->type==OPERATOR){
+                        case LONG:
+                           fprintf(file,"\tDEC QWORD[rel %s]\n",global_var->name);
+                           break;
+
+                        case LONGLONG:
+                           fprintf(file,"\tDEC QWORD[rel %s]\n",global_var->name);
+                           break;
+
+                        case SHORT:
+                           fprintf(file,"\tDEC WORD[rel %s]\n",global_var->name);
+                           break;
+
+                        case CHARACTER:
+                           break;
+
+                }
+
+              
+             }
+           }
+        }
+     }else if(root->left->type==OPERATOR){
       Variable *var=search_variable(&code_gen_stack,root->left->left->value);
       if(var){
         
          if(strcmp(root->left->value,"++")==0){
-            if(strcmp(var->type,"int")==0){
+            switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+                  break;
 
-               fprintf(file,"\tINC DWORD[rbp-%d]\n",var->offset);
+               case LONG:
+                  fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tINC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tINC WORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case CHARACTER:
+  
+                  break;
+
             }
+          
          }else if(strcmp(root->left->value,"--")==0){
-            if(strcmp(var->type,"int")==0){
+            switch(var->type){
+               case INTEGER:
+                  fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+                  break;
 
-               fprintf(file,"\tDEC DWORD[rbp-%d]\n",var->offset);
+               case LONG:
+                  fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case LONGLONG:
+                  fprintf(file,"\tDEC QWORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case SHORT:
+                  fprintf(file,"\tDEC WORD[rbp-%d]\n",var->offset);
+                  break;
+
+               case CHARACTER:
+                  
+                  break;
+
             }
+           
          }
          
       }else{
           Variable *global_var=search_global(root->left->left->value);
           if(global_var){
             if(strcmp(root->left->value,"++")==0){
-               if(strcmp(global_var->type,"int")==0){
-   
-                  fprintf(file,"\tINC DWORD[rel %s]\n",global_var->name);
+               switch(global_var->type){
+                     case INTEGER:
+                           fprintf(file,"\tINC DWORD[rel %s]\n",global_var->name);
+                           break;
+
+                     case LONG:
+                           fprintf(file,"\tINC QWORD[rel %s]\n",global_var->name);
+                           break;
+
+                     case LONGLONG:
+                           fprintf(file,"\tINC QWORD[rel %s]\n",global_var->name);
+                           break;
+
+                     case SHORT:
+                           fprintf(file,"\tINC WORD[rel %s]\n",global_var->name);
+                           break;
+
+                     case CHARACTER:
+                           break;
+
                }
+             
             }else if(strcmp(root->left->value,"--")==0){
-               if(strcmp(global_var->type,"int")==0){
-            
-                  fprintf(file,"\tDEC DWORD[rel %s]\n",global_var->name);
+               switch(global_var->type){
+                  case INTEGER:
+                      fprintf(file,"\tDEC DWORD[rel %s]\n",global_var->name);
+                      break;
+
+                  case LONG:
+                      fprintf(file,"\tDEC QWORD[rel %s]\n",global_var->name);
+                      break;
+
+                  case LONGLONG:
+                      fprintf(file,"\tDEC QWORD[rel %s]\n",global_var->name);
+                      break;
+
+                  case SHORT:
+                      fprintf(file,"\tDEC WORD[rel %s]\n",global_var->name);
+                      break;
+
+                  case CHARACTER:
+                      break;
+
+
                }
+             
             }
           }
       }
@@ -740,182 +1836,681 @@ void array_initialization(Node *root,FILE *file){
 void initialization(Node *root,FILE *file){
     if(!root) return;
     
+  
 
+    
     Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
            if(var){
              if(strcmp(root->left->value,"=")==0){
               
                 if(root->left->right->type==INT){
-                   if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tmov DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                   
+                   switch(var->type){
+                      case INTEGER:
+                        fprintf(file,"\tmov DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                        break;
+                      case LONG:
+                        fprintf(file,"\tmov QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                        break;
+                      case LONGLONG:
+                        fprintf(file,"\tmov QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                        break;
+                      case SHORT:
+                        fprintf(file,"\tmov WORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                        break;
+                      case CHARACTER:
+                        
+                        // fprintf(file,"\tmov WORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                        break;
+
                    }
+                  
                   
                 }else if(root->left->right->type==IDENTIFIER){
                    Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                    if(right_var){
-                      if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                      if(right_var->type==var->type){
+                         switch(var->type){
+                           case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                              fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
+                           case LONG:
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+                           case LONGLONG:
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+                           case SHORT:
+                              fprintf(file,"\tmov ax,WORD[rbp-%d]\n",right_var->offset);
+                              fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                              break;
+                           case CHARACTER:
+                              // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                              // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
+
+                         }
                       }
+                    
                       
                    }else{
                      Variable *gloabl_var=search_global(root->left->right->value);
-                     if(strcmp(var->type,"int")==0 && strcmp(gloabl_var->type,"int")==0){
-                        fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
-                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     if(gloabl_var){
+                         if(var->type==gloabl_var->type){
+                            switch(var->type){
+                              case INTEGER:
+                                 fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                 fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
+                              case LONG:
+                                 fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+                              case LONGLONG:
+                                 fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+                              case SHORT:
+                                 fprintf(file,"\tmov ax,[rel %s]\n",root->left->right->value);
+                                 fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                                 break;
+                              case CHARACTER:
+                                 // fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                 // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
+
+                            }
+                         }
                      }
+                     
                      
                    }
                 }else if(root->left->right->type==OPERATOR && strcmp(root->left->right->value,"=")!=0){
                      
                        postorder_traversal(root->left->right,file,false,var->type);
-                       if(strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                           fprintf(file,"\tadd rsp,4\n");
-                           fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
-                           
+                       
+                       switch(var->type){
+                          case INTEGER:
+                            fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                            fprintf(file,"\tadd rsp,4\n");
+                            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                            break;
+                         case LONG:
+                            fprintf(file,"\tpop rax\n");
+                            fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                            break;
+                         case LONGLONG:
+                            fprintf(file,"\tpop rax\n");
+                            fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                            break;
+                         case SHORT:
+                            fprintf(file,"\tmov ax,WORD[rsp]\n");
+                            fprintf(file,"\tadd rsp,2\n");
+                            fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                            break;
+                         case CHARACTER:
+                           //  fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                           //  fprintf(file,"\tadd rsp,4\n");
+                           //  fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
+                            break;
+                            
+
                        }
+                     
                 }
              }else{
                 if(strcmp(root->left->value,"+=")==0){
                   
                   if(root->left->right->type==INT){
-                     if(strcmp(var->type,"int")==0){
-                        
-                        fprintf(file,"\tadd DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                     switch(var->type){
+                        case INTEGER:
+                           fprintf(file,"\tadd DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case LONG:
+                           fprintf(file,"\tadd QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case LONGLONG:
+                           fprintf(file,"\tadd QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case SHORT:
+                           fprintf(file,"\tadd WORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case CHARACTER:
+                           // fprintf(file,"\tadd DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+
                      }
+                    
                      
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                           fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                         if(right_var->type==var->type){
+                            switch(var->type){
+                               case INTEGER:
+                                 fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
+                               case LONG:
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+                               case LONGLONG:
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+                               case SHORT:
+                                 fprintf(file,"\tmov ax,WORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tadd WORD[rbp-%d],ax\n",var->offset);
+                                 break;
+                               case CHARACTER:
+                                 // fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 // fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+
+                            }
                          }
+                        
                          
                       }else{
                         Variable *global_var=search_global(root->left->right->value);
-                        if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
-                           fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                        if(global_var){
+                            if(var->type==global_var->type){
+                               switch(var->type){
+                                  case INTEGER:
+                                    fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+                                  case LONG:
+                                    fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                    break;
+                                 case LONGLONG:
+                                    fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                    break;
+                                 case SHORT:
+                                    fprintf(file,"\tmov ax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tadd WORD[rbp-%d],ax\n",var->offset);
+                                    break;
+                                 case CHARACTER:
+                                    // fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                    // fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+
+                               }
+                            }
                         }
+                       
                       }
                    }else if(root->left->right->type==OPERATOR){
                        postorder_traversal(root->left->right,file,false,var->type);
-                       if(strcmp(var->type,"int")==0){
-                          fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                          fprintf(file,"\tadd rsp,4\n");
-                          fprintf(file,"\tadd [rbp-%d],eax\n",var->offset);
+                           switch(var->type){
+                              case INTEGER:
+                                  fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                  fprintf(file,"\tadd rsp,4\n");
+                                  fprintf(file,"\tadd DWORD[rbp-%d],eax\n",var->offset);
+                                  break;
+                              case LONG:
+                                  fprintf(file,"\tpop rax\n");
+                                  fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                  break;
+                              case LONGLONG:
+                                  fprintf(file,"\tpop rax\n");
+                                  fprintf(file,"\tadd QWORD[rbp-%d],rax\n",var->offset);
+                                  break;
+                              case SHORT:
+                                  fprintf(file,"\tmov ax,WORD[rsp]\n");
+                                  fprintf(file,"\tadd rsp,2\n");
+                                  fprintf(file,"\tadd WORD[rbp-%d],ax\n",var->offset);
+                                  break;
 
-                       }
+                              case CHARACTER:
+                                  break;
+
+                           }
+                         
+
+                       
                    }
                 }else if(strcmp(root->left->value,"-=")==0){
                   if(root->left->right->type==INT){
+                      switch(var->type){
+                        case INTEGER:
+                           fprintf(file,"\tsub DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case LONG:
+                           fprintf(file,"\tsub QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case LONGLONG:
+                           fprintf(file,"\tsub QWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case SHORT:
+                           fprintf(file,"\tsub WORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                        case CHARACTER:
+                           // fprintf(file,"\tsub DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
+                           break;
+                      }
                      
-                     if(strcmp(var->type,"int")==0){
-                        fprintf(file,"\tsub DWORD[rbp-%d],%s\n",var->offset,root->left->right->value);
-                     }
                      
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                           fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                         if(right_var->type==var->type){
+                            switch(var->type){
+                              case INTEGER:
+                                 fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
+                              case LONG:
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+                              case LONGLONG:
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+                              case SHORT:
+                                 fprintf(file,"\tmov ax,WORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tsub WORD[rbp-%d],ax\n",var->offset);
+                                 break;
+                              case CHARACTER:
+                                 // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                 // fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
+
+                            }
                          }
+                        
                       
                       }else{
                         Variable *global_var=search_global(root->left->right->value);
-                       
-                        if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
-                           fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                        if(global_var){
+                            if(global_var->type==var->type){
+                              switch(var->type){
+                                 case INTEGER:
+                                    fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+                                 case LONG:
+                                    fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                                    break;
+                                 case LONGLONG:
+                                    fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tsub QWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+                                    case SHORT:
+                                    fprintf(file,"\tmov ax,[rel %s]\n",root->left->right->value);
+                                    fprintf(file,"\tsub WORD[rbp-%d],ax\n",var->offset);
+                                 break;case CHARACTER:
+                                    // fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                    // fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+                                   
+                              }
+                               
+                            }
                         }
+                      
                        
                       }
                    }else if(root->left->right->type==OPERATOR){
                        postorder_traversal(root->left->right,file,false,var->type);
-                       if(strcmp(var->type,"int")==0){
-                          fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                          fprintf(file,"\tadd rsp,4\n");
-                          fprintf(file,"\tsub [rbp-%d],eax\n",var->offset);
+                       switch(var->type){
+                          case INTEGER:
+                           fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                           fprintf(file,"\tadd rsp,4\n");
+                           fprintf(file,"\tsub DWORD[rbp-%d],eax\n",var->offset);
+                           break;
+                        case LONG:
+                           fprintf(file,"\tpop rax\n");
+                           
+                           fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                           break;
+                        case LONGLONG:
+                           fprintf(file,"\tpop rax\n");
+                           fprintf(file,"\tsub QWORD[rbp-%d],rax\n",var->offset);
+                           break;
+                        case SHORT:
+                           fprintf(file,"\tmov ax,WORD[rsp]\n");
+                           fprintf(file,"\tadd rsp,2\n");
+                           fprintf(file,"\tsub WORD[rbp-%d],ax\n",var->offset);
+                           break;
+                        case CHARACTER:
+                           // fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                           // fprintf(file,"\tadd rsp,4\n");
+                           // fprintf(file,"\tsub [rbp-%d],eax\n",var->offset);
+                           break;
+
                        }
+                    
                    }
                 }else if(strcmp(root->left->value,"*=")==0){
                   if(root->left->right->type==INT){
-                        if(strcmp(var->type,"int")==0){
+                        switch(var->type){
+                           case INTEGER:
+                              fprintf(file,"mov eax,DWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                              fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
 
-                           fprintf(file,"mov eax,DWORD[rbp-%d]\n",var->offset);
-                           fprintf(file,"\timul eax,%s\n",root->left->right->value);
-                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                           case LONG:
+                              fprintf(file,"mov rax,QWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\timul rax,%s\n",root->left->right->value);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+
+                           case LONGLONG:
+                              fprintf(file,"mov rax,QWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\timul rax,%s\n",root->left->right->value);
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+
+                           case SHORT:
+                              fprintf(file,"mov ax,WORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\timul ax,%s\n",root->left->right->value);
+                              fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                              break;
+
+                           case CHARACTER:
+                              // fprintf(file,"mov eax,DWORD[rbp-%d]\n",var->offset);
+                              // fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                              // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
                         }
+                       
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                         if(right_var->type==var->type){
+                            switch(var->type){
+                               case INTEGER:
+                                 fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
 
-                            fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                            fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
-                            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                               case LONG:
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\timul rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+
+                               case LONGLONG:
+                                 fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\timul rax,QWORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+
+                              case SHORT:
+                                 fprintf(file,"\tmov ax,WORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\timul ax,WORD[rbp-%d]\n",right_var->offset);
+                                 fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                                 break;
+
+                              case CHARACTER:
+                                 // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                 // fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                                 // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                 break;
+
+                            }
                          }
+                       
                       }else{
                         Variable *global_var=search_global(root->left->right->value);
-                        if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
+                        if(global_var){
+                            if(global_var->type==var->type){
+                                switch(var->type){
+                                   case INTEGER:
+                                       fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\timul eax,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                       break;
 
-                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                           fprintf(file,"\timul eax,[rel %s]\n",root->left->right->value);
-                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                  case LONG:
+                                       fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\timul rax,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                       break;
+
+                                  case LONGLONG:
+                                       fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\timul rax,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                       break;
+
+                                  case SHORT:
+                                       fprintf(file,"\tmov ax,WORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\timul ax,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                                       break;
+
+                                  case CHARACTER:
+                                       // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                       // fprintf(file,"\timul eax,[rel %s]\n",root->left->right->value);
+                                       // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                       break;
+
+                                }
+                            }
                         }
+                       
                       }
                    }else if(root->left->right->type==OPERATOR){
                         postorder_traversal(root->left->right,file,false,var->type);
-                        if(strcmp(var->type,"int")==0){
-                            fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                            fprintf(file,"\tadd rsp,4\n");
-                            fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
-                            fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
+                        switch(var->type){
+                            case INTEGER:
+                                 fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                 fprintf(file,"\tadd rsp,4\n");
+                                 fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
+                                 break;
+
+                            case LONG:
+                                 fprintf(file,"\tpop rax\n");
+                                 fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+
+                            case LONGLONG:
+                                 fprintf(file,"\tpop rax\n");
+                                 fprintf(file,"\timul rax,QWORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                 break;
+
+                            case SHORT:
+                                 fprintf(file,"\tmov ax,WORD[rsp]\n");
+                                 fprintf(file,"\tadd rsp,2\n");
+                                 fprintf(file,"\timul ax,WORD[rbp-%d]\n",var->offset);
+                                 fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                                 break;
+
+                            case CHARACTER:
+                                 // fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                 // fprintf(file,"\tadd rsp,4\n");
+                                 // fprintf(file,"\timul eax,DWORD[rbp-%d]\n",var->offset);
+                                 // fprintf(file,"\tmov [rbp-%d],eax\n",var->offset);
+                                 break;
+
                         }
+                      
                    }
                 }else if(strcmp(root->left->value,"/=")==0){
                   if(root->left->right->type==INT){
-                     if(strcmp(var->type,"int")==0){
-                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
-                        fprintf(file,"\tidiv ebx\n");
-                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     switch(var->type){
+                        case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv ebx\n");
+                              fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
+
+                        case LONG:
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv rbx\n");
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+
+                        case LONGLONG:
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv rbx\n");
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+
+                        case SHORT:
+                              fprintf(file,"\tmov ax,WORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tmov bx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv bx\n");
+                              fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                              break;
+
+                        case CHARACTER:
+                              // fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                              // fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
+                              // fprintf(file,"\tidiv rbx\n");
+                              // fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+                              
+
                      }
+                   
                    
                    }else if(root->left->right->type==IDENTIFIER){
                       Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                       if(right_var){
-                         if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
-                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                           fprintf(file,"\tidiv ebx\n");
-                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                         if(right_var->type==var->type){
+                            switch(var->type){
+                              case INTEGER:
+                                    fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                    fprintf(file,"\tidiv ebx\n");
+                                    fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+
+                              case LONG:
+                                    fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                    fprintf(file,"\tidiv rbx\n");
+                                    fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                    break;
+
+                              case LONGLONG:
+                                    fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                    fprintf(file,"\tidiv rbx\n");
+                                    fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                    break;
+
+                              case SHORT:
+                                    fprintf(file,"\tmov bx,WORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov ax,WORD[rbp-%d]\n",var->offset);
+                                    fprintf(file,"\tidiv bx\n");
+                                    fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                                    break;
+
+                              case CHARACTER:
+                                    // fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                                    // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                    // fprintf(file,"\tidiv ebx\n");
+                                    // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                    break;
+                            }
                          }
+                        
                         
                       }else{
                         Variable *global_var=search_global(root->left->right->value);
-                        if(strcmp(var->type,"int")==0 && strcmp(global_var->type,"int")==0){
+                        if(global_var){
+                             if(global_var->type==var->type){
+                                switch(var->type){
+                                   case INTEGER:
+                                       fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\tmov ebx,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tidiv ebx\n");
+                                       fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                       break;
 
-                           fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                           fprintf(file,"\tmov ebx,[rel %s]\n",root->left->right->value);
-                           fprintf(file,"\tidiv ebx\n");
-                           fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                                  case LONG:
+                                       fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\tmov rbx,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tidiv rbx\n");
+                                       fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                       break;
+
+                                  case LONGLONG:
+                                       fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\tmov rbx,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tidiv rbx\n");
+                                       fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                                       break;
+
+                                  case SHORT:
+                                       fprintf(file,"\tmov ax,WORD[rbp-%d]\n",var->offset);
+                                       fprintf(file,"\tmov bx,[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tidiv bx\n");
+                                       fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                                       break;
+
+                                  case CHARACTER:
+                                       break;
+
+                                }
+                             }
                         }
+                       
                       }
                    }else if(root->left->right->type==OPERATOR){
                      postorder_traversal(root->left->right,file,false,var->type);
-                     if(strcmp(var->type,"int")==0){
-    
-                        fprintf(file,"\tmov ebx,DWORD[rsp]\n");
-                        fprintf(file,"\tadd rsp,4\n");
-                        fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
-                        fprintf(file,"\tcdq\n");
-                        fprintf(file,"\tidiv ebx\n");
-                        fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     switch(var->type){
+                        case INTEGER:
+                              fprintf(file,"\tmov ebx,DWORD[rsp]\n");
+                              fprintf(file,"\tadd rsp,4\n");
+                              fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tcdq\n");
+                              fprintf(file,"\tidiv ebx\n");
+                              fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
+
+                        case LONG:
+                              fprintf(file,"\tpop rbx\n");
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tidiv rbx\n");
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tpop rbx\n");
+                              fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tidiv rbx\n");
+                              fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                              break;
+
+                        case SHORT:
+                              fprintf(file,"\tmov bx,WORD[rsp]\n");
+                              fprintf(file,"\tadd rsp,2\n");
+                              fprintf(file,"\tmov ax,WORD[rbp-%d]\n",var->offset);
+                              fprintf(file,"\tidiv bx\n");
+                              fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                              break;
+
+                        case CHARACTER:
+                              // fprintf(file,"\tmov ebx,DWORD[rsp]\n");
+                              // fprintf(file,"\tadd rsp,4\n");
+                              // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",var->offset);
+                              // fprintf(file,"\tcdq\n");
+                              // fprintf(file,"\tidiv ebx\n");
+                              // fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                              break;
+
                      }
+                    
                    }
                 }
              }
@@ -930,173 +2525,718 @@ void initialization(Node *root,FILE *file){
                if(strcmp(root->left->value,"=")==0){
   
                   if(root->left->right->type==INT){
-                     if(strcmp(var->type,"int")==0){
-                       fprintf(file,"\tmov DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                     switch(var->type){
+                         case INTEGER:
+                              fprintf(file,"\tmov DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                              break;
+                         case LONG:
+                              fprintf(file,"\tmov QWORD[rel %s],%s\n",var->name,root->left->right->value);
+                              break;
+                         case LONGLONG:
+                              fprintf(file,"\tmov QWORD[rel %s],%s\n",var->name,root->left->right->value);
+                              break;
+                         case SHORT:
+                              fprintf(file,"\tmov WORD[rel %s],%s\n",var->name,root->left->right->value);
+                              break;
+                         case CHARACTER:
+                              // fprintf(file,"\tmov DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                              break;
+
                      }
+                   
                     
                   }else if(root->left->right->type==IDENTIFIER){
                      Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                      if(right_var){
-                        if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                          fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                        if(right_var->type==var->type){
+                            switch(var->type){
+                                case INTEGER:
+                                    fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                    break;
+
+                               case LONG:
+                                    fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                    break;
+
+                               case LONGLONG:
+                                    fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                    break;
+
+                               case SHORT:
+                                    fprintf(file,"\tmov ax,WORD[rbp-%d]\n",right_var->offset);
+                                    fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                    break;
+
+                               case CHARACTER:
+                                    // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                    // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                    break;
+
+                            }
                         }
+                       
                         
                      }else{
                        Variable *gloabl_var=search_global(root->left->right->value);
-                       if(strcmp(var->type,"int")==0 && strcmp(gloabl_var->type,"int")==0){
-                          fprintf(file,"\tmov eax,[rel %s]\n",gloabl_var->name);
-                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                       if(gloabl_var){
+                           if(gloabl_var->type==var->type){
+                               switch(var->type){
+                                   case INTEGER:
+                                       fprintf(file,"\tmov eax,[rel %s]\n",gloabl_var->name);
+                                       fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                       break;
+
+                                   case LONG:
+                                       fprintf(file,"\tmov rax,[rel %s]\n",gloabl_var->name);
+                                       fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                       break;
+                                        
+                                   case LONGLONG:
+                                       fprintf(file,"\tmov rax,[rel %s]\n",gloabl_var->name);
+                                       fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                       break;
+
+                                   case SHORT:
+                                       fprintf(file,"\tmov ax,[rel %s]\n",gloabl_var->name);
+                                       fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                       break;
+
+                                  case CHARACTER:
+                                       // fprintf(file,"\tmov eax,[rel %s]\n",gloabl_var->name);
+                                       // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                       break;
+                               }
+                           }
                        }
+                     
                        
                      }
                   }else if(root->left->right->type==OPERATOR){
                       postorder_traversal(root->left->right,file,false,var->type);
-                      fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                      fprintf(file,"\tadd rsp,4\n");
-                      fprintf(file,"\tmov [rel %s],eax\n",var->name);
+                      switch(var->type){
+                         case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                              fprintf(file,"\tadd rsp,4\n");
+                              fprintf(file,"\tmov [rel %s],eax\n",var->name);
+                              break;
+
+                         case LONG:
+                              fprintf(file,"\tpop rax\n");
+                              fprintf(file,"\tmov [rel %s],rax\n",var->name);
+                              break;
+
+                         case LONGLONG:
+                              fprintf(file,"\tpop rax\n");
+                              fprintf(file,"\tmov [rel %s],rax\n",var->name);
+                              break;
+
+                         case SHORT:
+                              fprintf(file,"\tmov ax,WORD[rsp]\n");
+                              fprintf(file,"\tadd rsp,2\n");
+                              fprintf(file,"\tmov [rel %s],ax\n",var->name);
+                              break;
+
+                         case CHARACTER:
+                              // fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                              // fprintf(file,"\tadd rsp,4\n");
+                              // fprintf(file,"\tmov [rel %s],eax\n",var->name);
+                              break;
+
+                      }
+                     
                   }
                }else{
                   if(strcmp(root->left->value,"+=")==0){
                      
                     if(root->left->right->type==INT){
-                     
-                       if(strcmp(var->type,"int")==0){
+                      switch(var->type){
+                          case INTEGER:
+                                 fprintf(file,"\tadd DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                         case LONG:
+                                 fprintf(file,"\tadd QWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                         case LONGLONG:
+                                 fprintf(file,"\tadd QWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                         case SHORT:
+                                 fprintf(file,"\tadd WORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                         case CHARACTER:
+                                 // fprintf(file,"\tadd DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                      }
                       
-                          fprintf(file,"\tadd DWORD[rel %s],%s\n",var->name,root->left->right->value);
-                       }
                        
                      }else if(root->left->right->type==IDENTIFIER){
                         
                         Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                         if(right_var){
-                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                             fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                           if(right_var->type==var->type){
+                                switch(var->type){
+                                     case INTEGER:
+                                          fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                                          break;
+
+                                     case LONG:
+                                          fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tadd [rel %s],rax\n",var->name);
+                                          break;
+
+                                     case LONGLONG:
+                                          fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tadd [rel %s],rax\n",var->name);
+                                          break;
+
+                                     case SHORT:
+                                          fprintf(file,"\tmov eax,WORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tadd [rel %s],ax\n",var->name);
+                                          break;
+
+                                     case CHARACTER:
+                                          // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                          // fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                                          break;
+
+                                }
                            }
+                        
                            
                         }else{
                            
                           Variable *global_var=search_global(root->left->right->value);
-                          if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
-                             fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                          if(global_var){
+                              if(global_var->type==var->type){
+                                   switch(var->type){
+                                      case INTEGER:
+                                          fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                                          break;
+
+                                     case LONG:
+                                          fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tadd [rel %s],rax\n",var->name);
+                                          break;
+                                     
+                                     case LONGLONG:
+                                          fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tadd [rel %s],rax\n",var->name);
+                                          break;
+
+                                     case SHORT:
+                                          fprintf(file,"\tmov ax,[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tadd [rel %s],ax\n",var->name);
+                                          break;
+
+
+                                     case CHARACTER:
+                                          // fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                          // fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                                          break;
+                                   }
+                              }
                           }
+                         
                         }
                      }else if(root->left->right->type==OPERATOR){
-                              postorder_traversal(root->left->right,file,false,var->type);
-                             fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                             fprintf(file,"\tadd rsp,4\n");
-                             fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                             postorder_traversal(root->left->right,file,false,var->type);
+                             switch(var->type){
+                                 case INTEGER:
+                                       fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                       fprintf(file,"\tadd rsp,4\n");
+                                       fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                                       break;
+
+                                 case LONG:
+                                       fprintf(file,"\tpop rax\n");
+                                       
+                                       fprintf(file,"\tadd [rel %s],rax\n",var->name);
+                                       break;
+
+                                 case LONGLONG:
+                                       fprintf(file,"\tpop rax\n");
+                                       
+                                       fprintf(file,"\tadd [rel %s],rax\n",var->name);
+                                       break;
+
+                                 case SHORT:
+                                       fprintf(file,"\tmov ax,WORD[rsp]\n");
+                                       fprintf(file,"\tadd rsp,2\n");
+                                       fprintf(file,"\tadd [rel %s],ax\n",var->name);
+                                       break;
+
+                                 case CHARACTER:
+                                       // fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                       // fprintf(file,"\tadd rsp,4\n");
+                                       // fprintf(file,"\tadd [rel %s],eax\n",var->name);
+                                       break;
+
+                             }
+                            
                      }
                   }else if(strcmp(root->left->value,"-=")==0){
                    
                     if(root->left->right->type==INT){
-                       
-                       if(strcmp(var->type,"int")==0){
-                          fprintf(file,"\tsub DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                       switch(var->type){
+                            case INTEGER:
+                                 fprintf(file,"\tsub DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                            case LONG:
+                                 fprintf(file,"\tsub QWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                            case LONGLONG:
+                                 fprintf(file,"\tsub QWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                            case SHORT:
+                                 fprintf(file,"\tsub WORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
+                            case CHARACTER:
+                                 // fprintf(file,"\tsub DWORD[rel %s],%s\n",var->name,root->left->right->value);
+                                 break;
+
                        }
+                     
                        
                      }else if(root->left->right->type==IDENTIFIER){
                         Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                         if(right_var){
-                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
-                             fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
+                           if(right_var->type==var->type){
+                               switch(var->type){
+                                    case INTEGER:
+                                          fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
+                                          break;
+
+                                    case LONG:
+                                          fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tsub QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                    case LONGLONG:
+                                          fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tsub QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                    case SHORT:
+                                          fprintf(file,"\tmov ax,WORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tsub WORD[rel %s],ax\n",var->name);
+                                          break;
+
+                                    case CHARACTER:
+                                          // fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",right_var->offset);
+                                          // fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
+                                          break;
+
+                               }
                            }
+                        
                         
                         }else{
                           Variable *global_var=search_global(root->left->right->value);
-                         
-                          if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
-                             fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
+                          if(global_var->type==var->type){
+                           switch(var->type){
+                                case INTEGER:
+                                      fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                      fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
+                                      break;
+
+                                case LONG:
+                                      fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                      fprintf(file,"\tsub QWORD[rel %s],rax\n",var->name);
+                                      break;
+
+                                case LONGLONG:
+                                      fprintf(file,"\tmov rax,[rel %s]\n",root->left->right->value);
+                                      fprintf(file,"\tsub QWORD[rel %s],rax\n",var->name);
+                                      break;
+
+                                case SHORT:
+                                      fprintf(file,"\tmov ax,[rel %s]\n",root->left->right->value);
+                                      fprintf(file,"\tsub WORD[rel %s],ax\n",var->name);
+                                      break;
+
+                                case CHARACTER:
+                                    //   fprintf(file,"\tmov eax,[rel %s]\n",root->left->right->value);
+                                    //   fprintf(file,"\tsub DWORD[rel %s],eax\n",var->name);
+                                      break;
+
+                           }
                           }
+                        
                          
                         }
                      }else if(root->left->right->type==OPERATOR){
                            postorder_traversal(root->left->right,file,false,var->type);
-                           if(strcmp(var->type,"int")==0){
-                               fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                               fprintf(file,"\tadd rsp,4\n");
-                               fprintf(file,"\tsub [rel %s],eax\n",var->name);
+                           switch(var->type){
+                                case INTEGER:
+                                    fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                    fprintf(file,"\tadd rsp,4\n");
+                                    fprintf(file,"\tsub [rel %s],eax\n",var->name);
+                                    break;
+
+                               case LONG:
+                                    fprintf(file,"\tpop rax\n");
+                                    fprintf(file,"\tsub [rel %s],rax\n",var->name);
+                                    break;
+
+                               case LONGLONG:
+                                    fprintf(file,"\tpop rax\n");
+                                    fprintf(file,"\tsub [rel %s],rax\n",var->name);
+                                    break;
+
+                               case SHORT:
+                                    fprintf(file,"\tmov ax,WORD[rsp]\n");
+                                    fprintf(file,"\tadd rsp,2\n");
+                                    fprintf(file,"\tsub [rel %s],ax\n",var->name);
+                                    break;
+
+                               case CHARACTER:
+                                    // fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                    // fprintf(file,"\tadd rsp,4\n");
+                                    // fprintf(file,"\tsub [rel %s],eax\n",var->name);
+                                    break;
 
                            }
+                           
                      }
                   }else if(strcmp(root->left->value,"*=")==0){
                     if(root->left->right->type==INT){
-                          if(strcmp(var->type,"int")==0){
-                             fprintf(file,"mov eax,DWORD[%s]\n",var->name);
-                             fprintf(file,"\timul eax,%s\n",root->left->right->value);
-                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
-                          }
+                           switch(var->type){
+                                case INTEGER:
+                                       fprintf(file,"mov eax,DWORD[%s]\n",var->name);
+                                       fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                                       fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                       break;
+
+                                 case LONG:
+                                       fprintf(file,"mov rax,QWORD[%s]\n",var->name);
+                                       fprintf(file,"\timul rax,%s\n",root->left->right->value);
+                                       fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                       break;
+
+                                 case LONGLONG:
+                                       fprintf(file,"mov rax,QWORD[%s]\n",var->name);
+                                       fprintf(file,"\timul rax,%s\n",root->left->right->value);
+                                       fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                       break;
+
+                                 case SHORT:
+                                       fprintf(file,"mov ax,WORD[%s]\n",var->name);
+                                       fprintf(file,"\timul ax,%s\n",root->left->right->value);
+                                       fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                       break;
+
+                                 case CHARACTER:
+                                       // fprintf(file,"mov eax,DWORD[%s]\n",var->name);
+                                       // fprintf(file,"\timul eax,%s\n",root->left->right->value);
+                                       // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                       break;
+
+                           }
+                         
                      }else if(root->left->right->type==IDENTIFIER){
                         Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                         if(right_var){
-                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-  
-                              fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
-                              fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
-                              fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
-                           }
+                           if(right_var->type==var->type){
+                              switch(var->type){
+                                   case INTEGER:
+                                          fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
+                                          fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                          break;
+
+                                    case LONG:
+                                          fprintf(file,"\tmov rax,QWORD[rel %s]\n",var->name);
+                                          fprintf(file,"\timul rax,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                    case LONGLONG:
+                                          fprintf(file,"\tmov rax,QWORD[rel %s]\n",var->name);
+                                          fprintf(file,"\timul rax,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                    case SHORT:
+                                          fprintf(file,"\tmov ax,WORD[rel %s]\n",var->name);
+                                          fprintf(file,"\timul ax,WORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                          break;
+
+                                    case CHARACTER:
+                                          // fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
+                                          // fprintf(file,"\timul eax,DWORD[rbp-%d]\n",right_var->offset);
+                                          // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                          break;
+                              }
+                          }
+                          
                         }else{
                           Variable *global_var=search_global(root->left->right->value);
-                          if(strcmp(global_var->type,"int")==0 && strcmp(var->type,"int")==0){
-  
-                             fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
-                             fprintf(file,"\timul eax,DWORD[rel %s]\n",root->left->right->value);
-                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
-                          }
+                          if(global_var->type==var->type){
+                           switch(var->type){
+                                case INTEGER:
+                                       fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                                       fprintf(file,"\timul eax,DWORD[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                       break;
+
+                                 case LONG:
+                                       fprintf(file,"\tmov rax,QWORD[%s]\n",var->name);
+                                       fprintf(file,"\timul rax,QWORD[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                       break;
+
+                                 case LONGLONG:
+                                       fprintf(file,"\tmov rax,QWORD[%s]\n",var->name);
+                                       fprintf(file,"\timul rax,QWORD[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                       break;
+
+
+                                 case SHORT:
+                                       fprintf(file,"\tmov ax,WORD[%s]\n",var->name);
+                                       fprintf(file,"\timul ax,WORD[rel %s]\n",root->left->right->value);
+                                       fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                       break;
+
+                                 case CHARACTER:
+                                       // fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                                       // fprintf(file,"\timul eax,DWORD[rel %s]\n",root->left->right->value);
+                                       // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                       break;
+
+                           }
+                       }
+                         
                         }
                      }else if(root->left->right->type==OPERATOR){
                           postorder_traversal(root->left->right,file,false,var->type);
-                          if(strcmp(var->type,"int")==0){
-                           fprintf(file,"\tmov eax,DWORD[rsp]\n");
-                           fprintf(file,"\tadd rsp,4\n");
-                           fprintf(file,"\timul eax,DWORD[rel %s]\n",var->name);
-                           fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                          switch(var->type){
+                               case INTEGER:
+                                    fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                    fprintf(file,"\tadd rsp,4\n");
+                                    fprintf(file,"\timul eax,DWORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                    break;
+
+                               case LONG:
+                                    fprintf(file,"\tpop rax\n");
+                                    fprintf(file,"\timul rax,QWORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                    break;
+
+
+                               case LONGLONG:
+                                    fprintf(file,"\tpop rax\n");
+                                    fprintf(file,"\timul rax,QWORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                    break;
+                                
+                               case SHORT:
+                                    fprintf(file,"\tmov ax,WORD[rsp]\n");
+                                    fprintf(file,"\tadd rsp,2\n");
+                                    fprintf(file,"\timul ax,WORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                    break;
+
+                               case CHARACTER:
+                                    // fprintf(file,"\tmov eax,DWORD[rsp]\n");
+                                    // fprintf(file,"\tadd rsp,4\n");
+                                    // fprintf(file,"\timul eax,DWORD[rel %s]\n",var->name);
+                                    // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                    break;
+
                           }
+                         
                           
                      }
                   }else if(strcmp(root->left->value,"/=")==0){
                     if(root->left->right->type==INT){
-                       if(strcmp(var->type,"int")==0){
-                          fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
-                          fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
-                          fprintf(file,"\tidiv ebx\n");
-                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
-                       }
+                     switch(var->type){
+                        case INTEGER:
+                              fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                              fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv ebx\n");
+                              fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                              break;
+
+                        case LONG:
+                              fprintf(file,"\tmov rax,QWORD[%s]\n",var->name);
+                              fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv rbx\n");
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                              break;
+
+                        case LONGLONG:
+                              fprintf(file,"\tmov rax,QWORD[%s]\n",var->name);
+                              fprintf(file,"\tmov rbx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv rbx\n");
+                              fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                              break;
+
+                        case SHORT:
+                              fprintf(file,"\tmov ax,WORD[%s]\n",var->name);
+                              fprintf(file,"\tmov bx,%s\n",root->left->right->value);
+                              fprintf(file,"\tidiv bx\n");
+                              fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                              break;
+
+                        case CHARACTER:
+                              // fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                              // fprintf(file,"\tmov ebx,%s\n",root->left->right->value);
+                              // fprintf(file,"\tidiv ebx\n");
+                              // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                              break;
+
+                   }
+                      
                      
                      }else if(root->left->right->type==IDENTIFIER){
                         Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->right->value);
                         if(right_var){
-                           if(strcmp(right_var->type,"int")==0 && strcmp(var->type,"int")==0){
-                             fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
-                             fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
-                             fprintf(file,"\tidiv ebx\n");
-                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
-                           }
+                           if(right_var->type==var->type){
+                              switch(var->type){
+                                   case INTEGER:
+                                          fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
+                                          fprintf(file,"\tidiv ebx\n");
+                                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                          break;
+
+                                   case LONG:
+                                          fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov rax,QWORD[rel %s]\n",var->name);
+                                          fprintf(file,"\tidiv rbx\n");
+                                          fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                   case LONGLONG:
+                                          fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov rax,QWORD[rel %s]\n",var->name);
+                                          fprintf(file,"\tidiv rbx\n");
+                                          fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                   case SHORT:
+                                          fprintf(file,"\tmov bx,WORD[rbp-%d]\n",right_var->offset);
+                                          fprintf(file,"\tmov ax,WORD[rel %s]\n",var->name);
+                                          fprintf(file,"\tidiv bx\n");
+                                          fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                          break;
+
+                                   case CHARACTER:
+                                          // fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                                          // fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
+                                          // fprintf(file,"\tidiv ebx\n");
+                                          // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                          break;
+   
+                              }
+                          }
+                          
                           
                         }else{
                           Variable *global_var=search_global(root->left->right->value);
-                          if(strcmp(var->type,"int")==0 && strcmp(global_var->type,"int")==0){
-  
-                             fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
-                             fprintf(file,"\tmov ebx,DWORD[rel %s]\n",root->left->right->value);
-                             fprintf(file,"\tidiv ebx\n");
-                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                          if(global_var){
+                           if(global_var->type==var->type){
+                              switch(var->type){
+                                   case INTEGER:
+                                          fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                                          fprintf(file,"\tmov ebx,DWORD[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tidiv ebx\n");
+                                          fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                          break;
+
+                                   case LONG:
+                                          fprintf(file,"\tmov rax,QWORD[%s]\n",var->name);
+                                          fprintf(file,"\tmov rbx,QWORD[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tidiv rbx\n");
+                                          fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                   case LONGLONG:
+                                          fprintf(file,"\tmov rax,QWORD[%s]\n",var->name);
+                                          fprintf(file,"\tmov rbx,QWORD[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tidiv rbx\n");
+                                          fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                          break;
+
+                                   case SHORT:
+                                          fprintf(file,"\tmov ax,WORD[%s]\n",var->name);
+                                          fprintf(file,"\tmov bx,WORD[rel %s]\n",root->left->right->value);
+                                          fprintf(file,"\tidiv bx\n");
+                                          fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                          break;
+
+                                  case CHARACTER:
+                                          // fprintf(file,"\tmov eax,DWORD[%s]\n",var->name);
+                                          // fprintf(file,"\tmov ebx,DWORD[rel %s]\n",root->left->right->value);
+                                          // fprintf(file,"\tidiv ebx\n");
+                                          // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                          break;
+   
+                              }
                           }
+                          }
+                         
                         }
                      }else if(root->left->right->type==OPERATOR){
                           postorder_traversal(root->left->right,file,false,var->type);
-                          if(strcmp(var->type,"int")==0){
+                          switch(var->type){
+                             case INTEGER:
+                                    fprintf(file,"\tmov ebx,DWORD[rsp]\n");
+                                    fprintf(file,"\tadd rsp,4\n");
+                                    fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tidiv ebx\n");
+                                    fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                    break;
 
-                             fprintf(file,"\tmov ebx,DWORD[rsp]\n");
-                             fprintf(file,"\tadd rsp,4\n");
-                             fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
-                             fprintf(file,"\tidiv ebx\n");
-                             fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                             case LONG:
+                                    fprintf(file,"\tpop rbx\n");
+                                    fprintf(file,"\tmov rax,QWORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tidiv rbx\n");
+                                    fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                    break;
+
+                            case LONGLONG:
+                                    fprintf(file,"\tpop rbx\n");
+                                    fprintf(file,"\tmov rax,QWORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tidiv rbx\n");
+                                    fprintf(file,"\tmov QWORD[rel %s],rax\n",var->name);
+                                    break;
+
+                            case SHORT:
+                                    fprintf(file,"\tmov bx,WORD[rsp]\n");
+                                    fprintf(file,"\tadd rsp,2\n");
+                                    fprintf(file,"\tmov ax,WORD[rel %s]\n",var->name);
+                                    fprintf(file,"\tidiv bx\n");
+                                    fprintf(file,"\tmov WORD[rel %s],ax\n",var->name);
+                                    break;
+
+                            case CHARACTER:
+                                    // fprintf(file,"\tmov ebx,DWORD[rsp]\n");
+                                    // fprintf(file,"\tadd rsp,4\n");
+                                    // fprintf(file,"\tmov eax,DWORD[rel %s]\n",var->name);
+                                    // fprintf(file,"\tidiv ebx\n");
+                                    // fprintf(file,"\tmov DWORD[rel %s],eax\n",var->name);
+                                    break;
+                              
                           }
+                         
                      }
                   }
                }
@@ -1104,8 +3244,6 @@ void initialization(Node *root,FILE *file){
          }
 
 }
-
-
 
 void preoder_traversal(Node *root,FILE *file){
    if(!root) return;
@@ -1136,19 +3274,45 @@ void preoder_traversal(Node *root,FILE *file){
       }else if(strcmp(root->value,"int")==0 && root->left->right && strcmp(root->left->right->value,"FUNCTIONCALL")==0){
            Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
            if(var){
-           
+            
             fprintf(file,"\tcall %s\n",root->left->right->left->value);
-            fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+            switch(var->type){
+               case INTEGER:
+                     fprintf(file,"\tmov DWORD[rbp-%d],eax\n",var->offset);
+                     break;
+
+               case LONG:
+                     fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                     break;
+
+               case LONGLONG:
+                     fprintf(file,"\tmov QWORD[rbp-%d],rax\n",var->offset);
+                     break;
+
+               case SHORT:
+                     fprintf(file,"\tmov WORD[rbp-%d],ax\n",var->offset);
+                     break;
+
+               case CHARACTER:
+                     fprintf(file,"\tmov BYTE[rbp-%d],al\n",var->offset);
+                     break;
+
+            }
+            
            }else{
               printf("Not found %s\n",root->left->left->value);
               exit(0);
            }
            
-         //   preoder_traversal(root->right,file);
+        
           
            
-       }else if((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 ) && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || root->left->right->type==IDENTIFIER || root->left->right->type==OPERATOR) && root->left->left){
-        
+       }else if(((strcmp(root->value,"int")==0 || strcmp(root->value,"ASSIGN")==0 || strcmp(root->value,"long")==0) \
+            || strcmp(root->value,"long long")==0 || strcmp(root->value,"short")==0)
+            && root->left && root->left->type==OPERATOR && root->left->right && (root->left->right->type==INT || \
+            root->left->right->type==IDENTIFIER || root->left->right->type==OPERATOR) && root->left->left\
+        ){
+          
           initialization(root,file); 
       }else if(strcmp(root->value,"printf")==0){
            write_to_console(root,file);
@@ -1157,9 +3321,8 @@ void preoder_traversal(Node *root,FILE *file){
          Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->left->value);
          if(var){
             fprintf(file,"\tmov BYTE[rbp-%d],%s\n",var->offset,root->left->right->value);
-   
          }
-         // main_traverse(root->right,file);
+       
          
       }else if(strcmp(root->value,"ARR_ASSIGN")==0){
            array_initialization(root,file);
@@ -1174,28 +3337,142 @@ void preoder_traversal(Node *root,FILE *file){
             if(root->left->type==IDENTIFIER){
               Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
               if(var){
-                 if(strcmp(var->type,"int")==0){
-                    fprintf(file,"\tmov edi,[rbp-%d]\n",var->offset);
-                 }
+                  switch (var->type){
+                     case INTEGER:
+                        fprintf(file,"\tmov edi,DWORD[rbp-%d]\n",var->offset);
+                        break;
+                     case LONGLONG:
+                        fprintf(file,"\tmov rdi,QWORD[rbp-%d]\n",var->offset);
+                        break;
+                     case SHORT:
+                        /*
+                          16 bit registers
+                          rax=ax
+                          rbx=bx
+                          rcx=cx
+                          rdx=dx
+                          rsi=si
+                          rbp=bp
+                          rsp=sp
+                          rdi=di
+                        */
+                       fprintf(file,"\tmov di,WORD[rbp-%d]\n",var->offset);
+                       break;
+
+                     case LONG:
+                           fprintf(file,"\tmov rdi,QWORD[rbp-%d]\n",var->offset);
+                           break;
+
+                     case CHARACTER:
+                           break;
+                     
+
+
+                        
+
+                  }
+                
                  
               }else{
                  Variable *var=search_global(root->left->value);
-                 if(strcmp(var->type,"int")==0){
-                    fprintf(file,"\tmov edi,[rel %s]\n",root->left->value);
+                 if(var){
+                  switch (var->type){
+                     case INTEGER:
+                        fprintf(file,"\tmov edi,DWORD[rel %s]\n",root->left->value);
+                        break;
+                     case LONGLONG:
+                        fprintf(file,"\tmov rdi,QWORD[rel %s]\n",root->left->value);
+                        break;
+                     case SHORT:
+                        /*
+                          16 bit registers
+                          rax=ax
+                          rbx=bx
+                          rcx=cx
+                          rdx=dx
+                          rsi=si
+                          rbp=bp
+                          rsp=sp
+                          rdi=di
+                        */
+                        fprintf(file,"\tmov di,WORD[rel %s]\n",root->left->value);
+                        break;
+
+                     case LONG:
+                           fprintf(file,"\tmov rdi,QWORD[rel %s]\n",root->left->value);
+                           break;
+
+                     case CHARACTER:
+                           break;
+
+                  }
+                  
                  }
+                
                  
               }
            }else if(root->left->type==INT){
-              if(strcmp(type,"int")==0){
-               fprintf(file,"\tmov edi,%s\n",root->left->value);
-              }
+             
+               switch(type){
+                    case INTEGER:
+                        fprintf(file,"\tmov edi,%s\n",root->left->value);
+                        break;
+
+                     case LONG:
+                           fprintf(file,"\tmov rdi,%s\n",root->left->value);
+                           break;
+
+                     case LONGLONG:
+                           fprintf(file,"\tmov rdi,%s\n",root->left->value);
+                           break;
+
+                     case SHORT:
+                           fprintf(file,"\tmov di,%s\n",root->left->value);
+                           break;
+
+                     case CHARACTER:
+                           // fprintf(file,"\tmov rdi,%s\n",root->left->value);
+                           break;
+
+
+               }
+            
               
            }else if(root->left->type==OPERATOR){
-               if(strcmp(type,"int")==0){
-                  postorder_traversal(root->left,file,true,type);
-                  fprintf(file,"\tmov edi,[rsp]\n");
-                  fprintf(file,"\tadd rsp,4\n");
+               switch(type){
+                    case INTEGER:
+                           postorder_traversal(root->left,file,true,type);
+                           fprintf(file,"\tmov edi,[rsp]\n");
+                           fprintf(file,"\tadd rsp,4\n");
+                           break;
+
+                     case LONG:
+                           postorder_traversal(root->left,file,true,type);
+                           fprintf(file,"\tpop rdi\n");
+                           
+                           break;
+
+                     case LONGLONG:
+                           postorder_traversal(root->left,file,true,type);
+                           fprintf(file,"\tpop rdi\n");
+                          
+                           break;
+
+                     case SHORT:
+                           postorder_traversal(root->left,file,true,type);
+                           fprintf(file,"\tmov di,[rsp]\n");
+                           fprintf(file,"\tadd rsp,2\n");
+                           break;
+
+                     case CHARACTER:
+                           // postorder_traversal(root->left,file,true,type);
+                           // fprintf(file,"\tmov edi,[rsp]\n");
+                           // fprintf(file,"\tadd rsp,4\n");
+                           break;
+                     
+
                }
+              
              
                
            }
@@ -1220,9 +3497,11 @@ void preoder_traversal(Node *root,FILE *file){
             if(root->left->type==IDENTIFIER){
                Variable *var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                if(var){
-                  if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tmov eax,QWORD[rbp-%d]\n",var->offset);
-                  }
+                  // if(strcmp(var->type,"int")==0){
+                  //    fprintf(file,"\tmov eax,QWORD[rbp-%d]\n",var->offset);
+                  // } // if(strcmp(var->type,"int")==0){
+                  //    fprintf(file,"\tmov eax,QWORD[rbp-%d]\n",var->offset);
+                  // }
                   
                }else{
                   fprintf(file,"\tmov rax,[%s]\n",root->left->value);
@@ -1257,10 +3536,8 @@ void preoder_traversal(Node *root,FILE *file){
 
 }
 
-
-
 //post order traversal 
-void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) {
+void postorder_traversal(Node *root, FILE *file,bool is_return,Returntype data_type) {
   
   if (!root) return;
  
@@ -1282,29 +3559,89 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                 if(right_var){
-                   
-                   if(strcmp(right_var->type,"int")==0){
-                     fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
-                   }
+                    switch(right_var->type){
+                          case INTEGER:
+                              fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                              break;
+                           case LONG:
+                              fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                              break;
+                           case LONGLONG:
+                              fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                              break;
+                           case SHORT:
+                              fprintf(file,"\tmov bx,WORD[rbp-%d]\n",right_var->offset);
+                              break;
+                           case CHARACTER:
+                              // fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                              break;
+                           
+                    }
+                 
                 }else{
                   Variable *global_var=search_global(root->right->value);
                   if(global_var){
-                      if(strcmp(global_var->type,"int")==0){
-                        fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+                     switch(global_var->type){
+                        case INTEGER:
+                            fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+                            break;
+                        case LONG:
+                            fprintf(file,"\tmov rbx,QWORD[rel %s]\n",global_var->name);
+                            break;
+                        case LONGLONG:
+                            fprintf(file,"\tmov rbx,QWORD[rel %s]\n",global_var->name);
+                            break;
+                        case SHORT:
+                            fprintf(file,"\tmov bx,WORD[rel %s]\n",global_var->name);
+                            break;
+                        case CHARACTER:
+                           //  fprintf(file,"\tmov ebx,DWORD[rel %s]\n",global_var->name);
+                            break;
                       }
+                    
                   }
                 }
                 
                 if(left_var){
-                  if(strcmp(left_var->type,"int")==0){
-                     fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                  switch(left_var->type){
+                     case INTEGER:
+                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case LONG:
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case LONGLONG:
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case SHORT:
+                         fprintf(file,"\tmov ax,WORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case CHARACTER:
+                        //  fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                         break;
                    }
+                
                 }else{
                   Variable *global_var=search_global(root->left->value);
                   if(global_var){
-                      if(strcmp(global_var->type,"int")==0){
-                        fprintf(file,"\tmov eax,DWORD[rel %s]\n",global_var->name);
+                     switch(global_var->type){
+                        case INTEGER:
+                            fprintf(file,"\tmov eax,DWORD[rel %s]\n",global_var->name);
+                            break;
+                        case LONG:
+                            fprintf(file,"\tmov rax,QWORD[rel %s]\n",global_var->name);
+                            break;
+                        case LONGLONG:
+                            fprintf(file,"\tmov rax,QWORD[rel %s]\n",global_var->name);
+                            break;
+                        case SHORT:
+                            fprintf(file,"\tmov ax,WORD[rel %s]\n",global_var->name);
+                            break;
+                        case CHARACTER:
+                           //  fprintf(file,"\tmov eax,DWORD[rel %s]\n",global_var->name);
+                            break;
                       }
+                    
                   }
                 }
                 
@@ -1313,88 +3650,362 @@ void postorder_traversal(Node *root, FILE *file,bool is_return,char *data_type) 
                
                 Variable *left_var=hashmap_get(current_scope(&code_gen_stack)->map,root->left->value);
                 if(left_var){
-                   if(strcmp(left_var->type,"int")==0){
-                     fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                  switch(left_var->type){
+                     case INTEGER:
+                         fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case LONG:
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case LONGLONG:
+                         fprintf(file,"\tmov rax,QWORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case SHORT:
+                         fprintf(file,"\tmov ax,WORD[rbp-%d]\n",left_var->offset);
+                         break;
+                     case CHARACTER:
+                        //  fprintf(file,"\tmov eax,DWORD[rbp-%d]\n",left_var->offset);
+                         break;
                    }
+                   
                   
                 }else{
                   Variable *var=search_global(root->left->value);
-                  if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tmov eax,[rel %s]\n",root->left->value);
+                  if(var){
+                      switch(var->type){
+                         case INTEGER:
+                              fprintf(file,"\tmov eax,[rel %s]\n",root->left->value);
+                              break;
+                         case LONG:
+                              fprintf(file,"\tmov rax,[rel %s]\n",root->left->value);
+                              break;
+                         case LONGLONG:
+                              fprintf(file,"\tmov rax,[rel %s]\n",root->left->value);
+                              break;
+                         case SHORT:
+                              fprintf(file,"\tmov ax,[rel %s]\n",root->left->value);
+                              break;
+                         case CHARACTER:
+                              // fprintf(file,"\tmov eax,[rel %s]\n",root->left->value);
+                              break;
+
+                      }
                   }
+                 
                   
                 }
-                   
-                  fprintf(file,"\tmov ebx,DWORD %s\n",root->right->value);
+                  switch(data_type){
+                       case INTEGER:
+                              fprintf(file,"\tmov ebx,DWORD %s\n",root->right->value);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tmov rbx,QWORD %s\n",root->right->value);
+                              break;
+                        case LONG:
+                              fprintf(file,"\tmov rbx,QWORD %s\n",root->right->value);
+                              break;
+                        case SHORT:
+                              fprintf(file,"\tmov bx,WORD %s\n",root->right->value);
+                              break;
+                        case CHARACTER:
+                              // fprintf(file,"\tmov ebx,DWORD %s\n",root->right->value);
+                              break;
+                        
+
+                  }
+                  
                 
              }else if(root->right->type==IDENTIFIER && root->left->type==INT){
                Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                if(right_var){
-                   if(strcmp(right_var->type,"int")==0){
-                     fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                   switch(right_var->type){
+                      case INTEGER:
+                           fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                           break;
+                     case LONGLONG:
+                           fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                           break;
+                     case LONG:
+                           fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                           break;
+                     case SHORT:
+                           fprintf(file,"\tmov bx,WORD[rbp-%d]\n",right_var->offset);
+                           break;
+                     case CHARACTER:
+                           // fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                           break;
+
                    }
+                
                  
                }else{
                   Variable *var=search_global(root->left->value);
-                  if(strcmp(var->type,"int")==0){
-                     fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
+                  if(var){
+                      switch(var->type){
+                        case INTEGER:
+                              fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tmov rbx,[rel %s]\n",root->right->value);
+                              break;
+                        case LONG:
+                              fprintf(file,"\tmov rbx,[rel %s]\n",root->right->value);
+                              break;
+                        case SHORT:
+                              fprintf(file,"\tmov bx,[rel %s]\n",root->right->value);
+                              break;
+                        case CHARACTER:
+                              // fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
+                              break;
+                              
+                      }
                   }
+                
                   
                }
-               fprintf(file,"\tmov eax,%s\n",root->left->value);
-             }else if(root->right->type==INT && root->left->type==INT){
+                switch(data_type){
+                     case INTEGER:
+                           fprintf(file,"\tmov eax,%s\n",root->left->value);
+                           break;
+                     case LONG:
+                           fprintf(file,"\tmov rax,%s\n",root->left->value);
+                           break;
+                     case LONGLONG:
+                           fprintf(file,"\tmov rax,%s\n",root->left->value);
+                           break;
+                     case SHORT:
+                           fprintf(file,"\tmov ax,%s\n",root->left->value);
+                           break;
+                     case CHARACTER:
+                           // fprintf(file,"\tmov eax,%s\n",root->left->value);
+                           break;
+
+                }
                
-                 fprintf(file,"\tmov ebx,%s\n",root->right->value);
-                 fprintf(file,"\tmov eax,%s\n",root->left->value);
+             }else if(root->right->type==INT && root->left->type==INT){
+                 switch(data_type){
+                    case INTEGER:
+                           fprintf(file,"\tmov ebx,%s\n",root->right->value);
+                           fprintf(file,"\tmov eax,%s\n",root->left->value);
+                           break;
+                     case LONG:
+                           fprintf(file,"\tmov rbx,%s\n",root->right->value);
+                           fprintf(file,"\tmov rax,%s\n",root->left->value);
+                           break;
+                     case LONGLONG:
+                           fprintf(file,"\tmov rbx,%s\n",root->right->value);
+                           fprintf(file,"\tmov rax,%s\n",root->left->value);
+                           break;
+                     case SHORT:
+                           fprintf(file,"\tmov bx,%s\n",root->right->value);
+                           fprintf(file,"\tmov ax,%s\n",root->left->value);
+                           break;
+                     case CHARACTER:
+                           // fprintf(file,"\tmov ebx,%s\n",root->right->value);
+                           // fprintf(file,"\tmov eax,%s\n",root->left->value);
+                           break;
+
+                 }
+                
              }else if(root->left->type==OPERATOR){
                if(root->right->type==INT){
-                  fprintf(file,"\tmov ebx,%s\n",root->right->value);
+                   switch(data_type){
+                        case INTEGER:
+                              fprintf(file,"\tmov ebx,%s\n",root->right->value);
+                              break;
+                        case LONG:
+                              fprintf(file,"\tmov rbx,%s\n",root->right->value);
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tmov rbx,%s\n",root->right->value);
+                              break;
+                        case SHORT:
+                              fprintf(file,"\tmov bx,%s\n",root->right->value);
+                              break;
+                        case CHARACTER:
+                              // fprintf(file,"\tmov ebx,%s\n",root->right->value);
+                              break;
+
+
+                   }
+                 
                }else if(root->right->type==IDENTIFIER){
                   Variable *right_var=hashmap_get(current_scope(&code_gen_stack)->map,root->right->value);
                   if(right_var){
-                     if(strcmp(right_var->type,"int")==0){
-                        fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                     switch(right_var->type){
+                        case INTEGER:
+                           fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                           break;
+                        case LONG:
+                           fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                           break;
+                        case LONGLONG:
+                           fprintf(file,"\tmov rbx,QWORD[rbp-%d]\n",right_var->offset);
+                           break;
+                        case SHORT:
+                           fprintf(file,"\tmov bx,WORD[rbp-%d]\n",right_var->offset);
+                           break;
+                        case CHARACTER:
+                           // fprintf(file,"\tmov ebx,DWORD[rbp-%d]\n",right_var->offset);
+                           break;
+
+                         
+
                      }
+                  
                     
                   }else{
-                     fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
+                     Variable *globa_var=search_global(root->right->value);
+                     if(globa_var){
+                          switch(globa_var->type){
+                               case INTEGER:
+                                     fprintf(file,"\tmov ebx,[rel %s]\n",root->right->value);
+                                     break;
+                               case LONG:
+                                     fprintf(file,"\tmov rbx,[rel %s]\n",root->right->value);
+                                     break;
+                               case LONGLONG:
+                                     fprintf(file,"\tmov rbx,[rel %s]\n",root->right->value);
+                                     break;
+                               case SHORT:
+                                    fprintf(file,"\tmov bx,[rel %s]\n",root->right->value);
+                                    break;
+                               case CHARACTER:
+                                    // fprintf(file,"\tmov bx,[rel %s]\n",root->right->value);
+                                    break;
+
+
+                          }
+                     }
+                     
                   }
                }
-                  fprintf(file,"\tmov eax,[rsp]\n");
-                  fprintf(file,"\tadd rsp,4\n");
+
+                   Returntype _type;
+
+                   if(is_return)
+                        _type=type;
+                   else 
+                        _type=data_type;
+
+                  
+
+                     switch(_type){
+                          case INTEGER:
+                              
+                              fprintf(file,"\tmov eax,[rsp]\n");
+                              fprintf(file,"\tadd rsp,4\n");
+                              break;
+                          case LONG:
+                             fprintf(file,"\tpop rax\n");
+                             break;
+                         case LONGLONG:
+                             fprintf(file,"\tpop rax\n");
+                             break;
+                         case SHORT:
+                             fprintf(file,"\tmov ax,[rsp]\n");
+                             fprintf(file,"\tadd rsp,2\n");
+                             break;
+   
+                         case CHARACTER:
+                             break;
+   
+                          
+   
+                     }
+                
+                  
              }
-
-               if(strcmp(root->value,"+")==0)fprintf(file,"\tadd eax,ebx\n");
-
-               if(strcmp(root->value,"-")==0) fprintf(file,"\tsub eax,ebx\n");
-               if(strcmp(root->value,"*")==0) fprintf(file,"\timul eax,ebx\n");
-         
-               if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv ebx\n");
                
-               if(is_return){
-                   if(strcmp(type,"int")==0){
-                     fprintf(file,"\tsub rsp,4\n");
-                     fprintf(file,"\tmov [rsp],eax\n");
-                   }
-               }else{
-                   if(strcmp(data_type,"int")==0){
-                        fprintf(file,"\tsub rsp,4\n");
-                        fprintf(file,"\tmov [rsp],eax\n");
-                      
-                   }
+             Returntype switch__type;
+
+             if(is_return) switch__type=type;
+             else switch__type=data_type;
+
+               switch(switch__type){
+                    case INTEGER:
+                    
+                           if(strcmp(root->value,"+")==0)fprintf(file,"\tadd eax,ebx\n");
+
+                           else if(strcmp(root->value,"-")==0) fprintf(file,"\tsub eax,ebx\n");
+                           else if(strcmp(root->value,"*")==0) fprintf(file,"\timul eax,ebx\n");
+                     
+                           else if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv ebx\n");
+                           break;
+                    case LONG:
+                           if(strcmp(root->value,"+")==0)fprintf(file,"\tadd rax,rbx\n");
+
+                           else if(strcmp(root->value,"-")==0) fprintf(file,"\tsub rax,rbx\n");
+                           else if(strcmp(root->value,"*")==0) fprintf(file,"\timul rax,rbx\n");
+                     
+                           else if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv rbx\n");
+                           break;
+                    case LONGLONG:
+                           if(strcmp(root->value,"+")==0)fprintf(file,"\tadd rax,rbx\n");
+
+                           else if(strcmp(root->value,"-")==0) fprintf(file,"\tsub rax,rbx\n");
+                           else if(strcmp(root->value,"*")==0) fprintf(file,"\timul rax,rbx\n");
+                     
+                           else if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv rbx\n");
+                           break;
+                    case SHORT:
+                   
+                           if(strcmp(root->value,"+")==0)fprintf(file,"\tadd ax,bx\n");
+                           
+                           else if(strcmp(root->value,"-")==0) fprintf(file,"\tsub ax,bx\n");
+                           else if(strcmp(root->value,"*")==0) fprintf(file,"\timul ax,bx\n");
+                     
+                           else if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv bx\n");
+                           break;
+                    case CHARACTER:
+                           // if(strcmp(root->value,"+")==0)fprintf(file,"\tadd eax,ebx\n");
+
+                           // if(strcmp(root->value,"-")==0) fprintf(file,"\tsub eax,ebx\n");
+                           // if(strcmp(root->value,"*")==0) fprintf(file,"\timul eax,ebx\n");
+                     
+                           // if(strcmp(root->value,"/")==0) fprintf(file,"\tidiv ebx\n");
+                           break;
                }
+              
+               Returntype switch_type;
+
+               if(is_return) switch_type=type;
+               
+               else  switch_type=data_type;
+               
+               
+             
+                    switch(switch_type){
+                        case INTEGER:
+                              fprintf(file,"\tsub rsp,4\n");
+                              fprintf(file,"\tmov [rsp],eax\n");
+                              break;
+                        case LONG:
+                              fprintf(file,"\tpush rax\n");
+                              break;
+                        case LONGLONG:
+                              fprintf(file,"\tpush rax\n");
+                              break;
+                        case SHORT:
+                              
+                              fprintf(file,"\tsub rsp,2\n");
+                              fprintf(file,"\tmov [rsp],ax\n");
+                              break;
+                        case CHARACTER:
+                              // fprintf(file,"\tpush,rax\n");
+                              break;
+                                 
+
+                    }
+                  
+               
              
         }
           
     
        }
        
-     
-   
-
-
-
-       /*
+/*
  for functions we wanna create a label for each ,corresponding to the function name...i.e 
  main function we create main label:
   main:
@@ -1411,13 +4022,15 @@ void function(Node *root,FILE *file){
    //if it is not a function we return early
    
     //Not checking if root->left->left exists since we have already parsed and produced ast meaning everything is as expected
-   if(strcmp(root->value,"int")==0 && strcmp(root->left->left->value,"(")==0){
+   if((strcmp(root->value,"int")==0 || strcmp(root->value,"short")==0 || strcmp(root->value,"long")==0 || strcmp(root->value,"long long")==0 )
+     && strcmp(root->left->left->value,"(")==0){
       /*
        we see the main function we generate global start label since we want execution to start from here,
        any other function we will create a label from the function name
       
       */
-      type=root->value;
+      
+      type=return_type_to_integer(NULL,root->value);
       parent=root->left;
      
       fprintf(file,"%s:\n",root->left->value);
@@ -1727,12 +4340,16 @@ void write_to_console(Node *root, FILE *file) {
 void generate_global_variables(Node *root,FILE *file){
    if(!root) return;
    //returning at this point because we don't want to generate code inside functions
-   if(strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
+   if(( strcmp(root->value,"int")==0  || strcmp(root->value,"long")==0 || strcmp(root->value,"long long")==0 || 
+         strcmp(root->value,"short")==0 || strcmp(root->value,"char")==0  )
+         && root->left->left &&strcmp(root->left->left->value,"(")==0) return;
    /*
    if the function encounters a variable it defines it in the data section
    It might be a function though.(we don't want to get here)
    */
-   if( strcmp(root->value,"int")==0 && root->left->left &&strcmp(root->left->left->value,"(")!=0){
+   if( (strcmp(root->value,"int")==0 || strcmp(root->value,"long long")==0 || strcmp(root->value,"long")==0 || 
+        strcmp(root->value,"short")==0 || strcmp(root->value,"char")==0) 
+        && root->left->left &&strcmp(root->left->left->value,"(")!=0){
          initialization(root,file);
       }
     
@@ -1768,7 +4385,6 @@ void code_generator(Node *root){
   */
   
   reverse_codegen_stack(&code_gen_stack);
-   
   function(root,file);
   print_number(file);
   print_char(file);

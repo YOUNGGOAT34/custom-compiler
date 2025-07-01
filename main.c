@@ -9,6 +9,7 @@
 #include "scope/stack.h"
 
 
+
 int main(void){
     FILE *file=fopen("test.c","r");
      if (file == NULL) {
@@ -17,15 +18,16 @@ int main(void){
         return 1;
     }
   
- 
- 
+   int arr[10];
+   memset(&arr,0,10*sizeof(int));
   Token *tokens=lexer(file);
 
-  
   //  print_tokens(tokens);
+  
    Node *root= parser(tokens);
+  
    code_generator(root);
-   
+  
    system("nasm -f elf64 generated.asm -o generated.o");
    system("ld generated.o -o generated");
  

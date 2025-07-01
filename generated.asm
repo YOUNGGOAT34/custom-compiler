@@ -1,5 +1,6 @@
 section .data
 buffer: TIMES 21 dB 0
+	b dq 0
 section .text
 	global _start
 _start:
@@ -7,18 +8,16 @@ _start:
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 8
-while0:
-	mov eax, DWORD [rbp-4]
-	mov ebx, 5
+	sub rsp, 12
+	mov QWORD[rbp-4],10
+	mov rax, QWORD [rbp-4]
+	mov rbx,1
 	cmp rax,rbx
-	jge end_while0
-	INC DWORD[rbp-4]
-	mov eax,DWORD[rbp-4]
-	mov DWORD[rbp-4],eax
-	jmp while0
-end_while0:
-	mov edi,[rbp-4]
+	je end_if0
+	DEC QWORD[rbp-4]
+	jmp end_if0
+end_if0:
+	mov rdi,QWORD[rbp-4]
 	mov rax, 60
 	mov rsp, rbp
 	pop rbp

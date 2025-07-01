@@ -30,12 +30,12 @@ FunctionTable *create_function_table() {
     return table;
 }
 
-void insert_function(FunctionTable *table, const char *name, const char *return_type, Param *params, int param_count, int line_number) {
+void insert_function(FunctionTable *table, const char *name,Returntype type, Param *params, int param_count, int line_number) {
     
     unsigned int index = hash(name);
     Function *function = malloc(sizeof(Function));
     function->name = strdup(name);
-    function->return_type = strdup(return_type);
+    function->return_type =type;
     function->param_count = param_count;
     function->line_number = line_number;
     function->params = malloc(sizeof(Param) * param_count);
@@ -45,7 +45,7 @@ void insert_function(FunctionTable *table, const char *name, const char *return_
     }
     for (int i = 0; i < param_count; i++) {
         function->params[i].name = strdup(params[i].name);
-        function->params[i].type = strdup(params[i].type);
+        function->params[i].type = params[i].type;
     }
     function->next = table->functions[index];
     table->functions[index] = function;
@@ -73,10 +73,10 @@ void clear_function_table(FunctionTable *table) {
             function = function->next;
 
             free(tmp->name);
-            free(tmp->return_type);
+            
             for (int j = 0; j < tmp->param_count; j++) {
                 free(tmp->params[j].name);
-                free(tmp->params[j].type);
+                // free(tmp->params[j].type);
             }
             free(tmp->params);
             free(tmp);
@@ -125,7 +125,7 @@ void hashmap_insert(HashMap *map, const char *key, Variable *value) {
 
 }
 
-void table_insert_variable(Table *table, const char *name, const char *type, size_t line_number, size_t size_of_type) {
+void table_insert_variable(Table *table, const char *name,Returntype type, size_t line_number, size_t size_of_type,bool is_global) {
     
     Variable *var = malloc(sizeof(Variable));
     if (!var) {
@@ -134,7 +134,7 @@ void table_insert_variable(Table *table, const char *name, const char *type, siz
     }
    
     var->name = strdup(name);
-    var->type = strdup(type);
+    var->type =type;
     var->line_number = line_number;
     
     if(size_of_type==0){
@@ -145,7 +145,7 @@ void table_insert_variable(Table *table, const char *name, const char *type, siz
         table->current_offset += size_of_type;
     }
     
-   
+    var->is_global=is_global;
 
     hashmap_insert(table->map, name, var);
     
@@ -198,7 +198,7 @@ void print_codegen_variables(void) {
         Entry *entry = map->buckets[i];
         while (entry) {
            
-            printf("Name: %s, Type: %s, Offset: %d\n", entry->value->name, entry->value->type, entry->value->offset);
+            printf("Name: %s, Type: %d, Offset: %d\n", entry->value->name, entry->value->type, entry->value->offset);
             entry = entry->next;
         }
     }

@@ -9,7 +9,7 @@
 #include "../scope/stack.h"
 
 void preoder_traversal(Node *,FILE *);
-void postorder_traversal(Node *, FILE *,bool,char *);
+void postorder_traversal(Node *, FILE *,bool,Returntype);
 void generate_data_section(Node *,FILE *);
 void write_to_console(Node *,FILE *);
 void code_generator(Node *);

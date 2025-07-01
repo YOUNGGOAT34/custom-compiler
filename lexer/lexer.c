@@ -14,11 +14,16 @@ Token *generate_keyword_identifier(char *current,int *current_index){
       }
 
       token->value[index]='\0';
-
+       /*
+        Keyords:short,int,while,if,do,else,return,for,int,long, long long
+       */
       if(strcmp(token->value,"exit")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"if")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"char")==0) token->type=KEYWORD;
+      else if(strcmp(token->value,"short")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"int")==0) token->type=KEYWORD;
+      else if(strcmp(token->value,"long")==0) token->type=KEYWORD;
+      else if(strcmp(token->value,"long long")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"for")==0)  token->type=KEYWORD;
       else if(strcmp(token->value,"while")==0) token->type=KEYWORD;
       else if(strcmp(token->value,"do")==0) token->type=KEYWORD;

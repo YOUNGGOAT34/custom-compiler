@@ -2,7 +2,7 @@
 #define HASHMAP_H
 
 #include <stddef.h>
-
+#include <stdbool.h>
 
 
 #define TABLE_SIZE 50
@@ -21,16 +21,23 @@
 
 
 */
-
+typedef enum {
+    INTEGER,
+    LONG,
+    LONGLONG,
+    CHARACTER,
+    SHORT
+    
+  }Returntype;
 
 typedef struct {
     char *name;
-    char *type;
+    Returntype type;
 } Param;
 
 typedef struct Function{
     char *name;
-    char *return_type;
+    Returntype return_type;
     size_t line_number;
     Param *params;
     int param_count;
@@ -55,8 +62,9 @@ typedef struct {
 
 typedef struct {
     char *name;
-    char *type;
+    Returntype type;
     int offset;
+    bool is_global;
     size_t line_number;
 } Variable;
 
@@ -85,11 +93,11 @@ unsigned int hash(const char *key);
 void hashmap_insert(HashMap *map, const char *key, Variable *value);
 Variable *hashmap_get(HashMap *map, const char *key);
 void clear_hashmap(HashMap *map) ;
-void table_insert_variable(Table *table, const char *name, const char *type, size_t line_number, size_t size_of_type);
+void table_insert_variable(Table *table, const char *name, Returntype type, size_t line_number, size_t size_of_type,bool);
 
 
 //function functions
-void insert_function(FunctionTable *table, const char *name, const char *return_type, Param *params, int param_count, int line_number);
+void insert_function(FunctionTable *table, const char *name, Returntype type, Param *params, int param_count, int line_number);
 Function *get_function(FunctionTable *table, const char *name);
 FunctionTable *create_function_table(void);
 void function_table_insert(FunctionTable *table, const char *key, Function *value);
